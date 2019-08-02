@@ -53,6 +53,8 @@ import static com.petrolexpert.mobile.Utils.NetworkUtils.getResponse_from_GetAss
 import static com.petrolexpert.mobile.Utils.NetworkUtils.getResponse_from_PrintX;
 
 public class MainActivity extends AppCompatActivity {
+
+    //Added nwith new branch
     public static final String ERROR_DETECTED = "No NFC tag detected!";
     public static final String WRITE_SUCCESS = "Text written to the NFC tag successfully!";
     public static final String WRITE_ERROR = "Error during writing, is the NFC tag close enough to your device?";
