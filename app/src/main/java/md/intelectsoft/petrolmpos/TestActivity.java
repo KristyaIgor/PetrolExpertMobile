@@ -69,8 +69,6 @@ public class TestActivity extends AppCompatActivity {
     @BindView(R.id.layoutCardInfo) ConstraintLayout layoutCardInfo;
     @BindView(R.id.textTerminalNumber) TextView terminalNumber;
     @BindView(R.id.textOperatorName) TextView terminalUser;
-    @BindView(R.id.textScanDKVCard) TextView scanDKVCard;
-    @BindView(R.id.textScanCard) TextView scanCard;
 
 
     String androidID, deviceName, publicIp, privateIp, deviceSN, osVersion, deviceModel, deviceId;
@@ -80,11 +78,22 @@ public class TestActivity extends AppCompatActivity {
     PEServiceAPI peServiceAPI;
     Context context;
 
-    @OnClick(R.id.buttonScanCard) void onScanCard(){
+    @OnClick(R.id.buttonScanCardCorporativ) void onScanCardCorp(){
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
             startActivityForResult(new Intent(context, ScannedBarcodeActivity.class), 121);
         else
             ActivityCompat.requestPermissions(TestActivity.this, new String[]{Manifest.permission.CAMERA}, 201);
+    }
+
+    @OnClick(R.id.buttonScanMyDiscount) void onScanMyDiscount(){
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+            startActivityForResult(new Intent(context, ScanMyDiscountActivity.class), 122);
+        else
+            ActivityCompat.requestPermissions(TestActivity.this, new String[]{Manifest.permission.CAMERA}, 221);
+    }
+
+    @OnClick(R.id.buttonScanWithoutIdentify) void onScanWithoutIdentify(){
+
     }
 
     @OnClick(R.id.buttonPrintX) void onPrintX(){
@@ -123,18 +132,10 @@ public class TestActivity extends AppCompatActivity {
             peServiceAPI = PERetrofitClient.getPEService(uri);
             registerDevice();
         }
+
         getURI(licenseId);
 
         boolean isVerifone = BaseApp.isVFServiceConnected();
-        if(isVerifone){
-            scanDKVCard.setText("Click here to pay with DKV");
-            scanDKVCard.setOnClickListener(textListener);
-        }
-        else{
-            scanDKVCard.setVisibility(View.GONE);
-            scanCard.setText("Aplly your card");
-            scanCard.setTextSize(24);
-        }
 
     }
 
@@ -160,6 +161,10 @@ public class TestActivity extends AppCompatActivity {
         if(requestCode == 201){
             if(permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 startActivityForResult(new Intent(context, ScannedBarcodeActivity.class), 121);
+        }
+        if(requestCode == 221){
+            if(permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                startActivityForResult(new Intent(context, ScanMyDiscountActivity.class), 122);
         }
     }
 
@@ -297,6 +302,8 @@ public class TestActivity extends AppCompatActivity {
         registerApplication.setOSType(BrokerServiceEnum.Android);
         registerApplication.setApplicationVersion(getAppVersion(this));
         registerApplication.setProductType(131);
+        registerApplication.setWorkPlace(SPFHelp.getInstance().getString("Cash",""));
+        registerApplication.setLastAuthorizedUser(SPFHelp.getInstance().getString("Owner", ""));
         registerApplication.setOSVersion(osVersion);
 
         Call<RegisterApplication> getURICall = brokerServiceAPI.getURICall(registerApplication);
