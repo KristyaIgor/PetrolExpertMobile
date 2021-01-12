@@ -31,7 +31,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".InfoActivity"/>
+        <activity android:name=".ClientMyDiscountCardCorporativActivity"/>
+        <activity android:name=".ScanMyDiscountActivity" />
+        <activity android:name=".InfoActivity" />
         <activity android:name=".TestActivity" />
         <activity android:name=".SplashActivity">
             <intent-filter>

@@ -23,10 +23,12 @@
             android:id="@+id/buttonInfo"
             android:layout_width="96dp"
             android:layout_height="96dp"
+            android:layout_marginStart="16dp"
             android:layout_marginBottom="20dp"
             android:background="@drawable/round_buttons"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/buttonPrintX"
+            app:layout_constraintHorizontal_chainStyle="spread_inside"
             app:layout_constraintStart_toStartOf="parent">
 
             <ImageView
@@ -60,14 +62,14 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/buttonPrintX"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginEnd="32dp"
-            android:layout_marginBottom="16dp"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="20dp"
             android:background="@drawable/round_buttons"
-            app:layout_constraintBottom_toTopOf="@+id/buttonInfo"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/buttonScanCard">
+            app:layout_constraintStart_toEndOf="@+id/buttonInfo">
 
             <ImageView
                 android:id="@+id/imageView4"
@@ -136,88 +138,129 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/buttonScanCard"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginStart="32dp"
+            android:id="@+id/buttonScanWithoutIdentify"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
             android:layout_marginBottom="16dp"
             android:background="@drawable/round_buttons"
             android:clickable="true"
             app:layout_constraintBottom_toTopOf="@+id/buttonInfo"
-            app:layout_constraintEnd_toStartOf="@+id/buttonPrintX"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_chainStyle="spread_inside"
             app:layout_constraintStart_toStartOf="parent">
 
             <ImageView
-                android:id="@+id/imageView3"
+                android:id="@+id/imageView4646"
                 android:layout_width="66dp"
-                android:layout_height="33dp"
+                android:layout_height="45dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="8dp"
-                app:layout_constraintBottom_toTopOf="@+id/textView22"
+                app:layout_constraintBottom_toTopOf="@+id/textView224"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintVertical_chainStyle="packed"
-                app:srcCompat="@drawable/scan_card" />
+                app:srcCompat="@drawable/mydiscount_logo" />
 
             <TextView
-                android:id="@+id/textView22"
+                android:id="@+id/textView224"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:fontFamily="@font/poppins_medium"
-                android:text="Scan card"
+                android:text="Other"
                 android:textColor="@color/white"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/imageView3" />
+                app:layout_constraintTop_toBottomOf="@+id/imageView4646" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <ImageView
-            android:id="@+id/imageView6"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_marginStart="32dp"
-            android:layout_marginEnd="32dp"
-            android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toTopOf="@+id/buttonPrintX"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textScanCard"
-            app:srcCompat="@drawable/card_main_scan_rfid" />
-
-        <TextView
-            android:id="@+id/textScanDKVCard"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/buttonScanCardCorporativ"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/round_buttons"
             android:clickable="true"
-            android:focusable="true"
-            android:text="Apply fuel card"
-            android:textColor="@color/white"
-            android:textSize="18sp"
+            app:layout_constraintBottom_toTopOf="@+id/buttonScanWithoutIdentify"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider2" />
+            app:layout_constraintHorizontal_chainStyle="spread_inside"
+            app:layout_constraintStart_toEndOf="@+id/buttonScanMyDiscount">
 
-        <TextView
-            android:id="@+id/textScanCard"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            <ImageView
+                android:id="@+id/imageView33546"
+                android:layout_width="66dp"
+                android:layout_height="45dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                app:layout_constraintBottom_toTopOf="@+id/textView22464"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed"
+                app:srcCompat="@drawable/mydiscount_logo" />
+
+            <TextView
+                android:id="@+id/textView22464"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/poppins_medium"
+                android:text="Card corp"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imageView33546" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/buttonScanMyDiscount"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="99dp"
+            android:background="@drawable/round_buttons"
             android:clickable="true"
-            android:focusable="true"
-            android:text="or\nsimple scan your card"
-            android:textAlignment="center"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.502"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textScanDKVCard" />
+            app:layout_constraintBottom_toTopOf="@+id/buttonScanWithoutIdentify"
+            app:layout_constraintEnd_toStartOf="@+id/buttonScanCardCorporativ"
+            app:layout_constraintHorizontal_chainStyle="spread_inside"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <ImageView
+                android:id="@+id/imageView3354646"
+                android:layout_width="66dp"
+                android:layout_height="45dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                app:layout_constraintBottom_toTopOf="@+id/textView2245464"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed"
+                app:srcCompat="@drawable/mydiscount_logo" />
+
+            <TextView
+                android:id="@+id/textView2245464"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/poppins_medium"
+                android:text="MyDiscount"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imageView3354646" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
