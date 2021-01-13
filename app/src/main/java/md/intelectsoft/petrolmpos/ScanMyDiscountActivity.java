@@ -14,10 +14,12 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.RemoteException;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.vision.CameraSource;
@@ -25,6 +27,8 @@ import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.vfi.smartpos.deviceservice.aidl.IScanner;
+import com.vfi.smartpos.deviceservice.aidl.ScannerListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,6 +45,10 @@ import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
 import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
 import md.intelectsoft.petrolmpos.network.pe.result.GetAssortmentSerializable;
+import md.intelectsoft.petrolmpos.verifone.Utilities.DeviceHelper;
+import md.intelectsoft.petrolmpos.verifone.Utilities.ToastUtil;
+import md.intelectsoft.petrolmpos.verifone.transaction.AppParams;
+import md.intelectsoft.petrolmpos.verifone.transaction.TransBasic;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -49,6 +57,7 @@ import retrofit2.Response;
 public class ScanMyDiscountActivity extends AppCompatActivity {
 
     @BindView(R.id.surfaceViewMyDiscount) SurfaceView surfaceView;
+    @BindView(R.id.layoutScanCamera) ConstraintLayout constraintLayoutScanCamera;
 
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
@@ -61,6 +70,10 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
     ProgressDialog progressDialog;
     PEServiceAPI peServiceAPI;
 
+
+    IScanner iScanner;
+    ScanMyDiscountActivity activity;
+
     @OnClick(R.id.layoutCloseScanMyDiscountActivity) void onExit(){
         finish();
     }
@@ -72,6 +85,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         ButterKnife.setDebug(true);
 
+        activity = ScanMyDiscountActivity.this;
         context = this;
         progressDialog = new ProgressDialog(context);
 
@@ -80,6 +94,54 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         peServiceAPI = PERetrofitClient.getPEService(uri);
 
         isVerifone = BaseApp.isVFServiceConnected();
+
+        if(isVerifone) {
+            constraintLayoutScanCamera.setVisibility(View.GONE);
+
+            iScanner = DeviceHelper.getInstance().getScanner();
+
+            Bundle bundle = new Bundle();
+            bundle.putString("topTitleString", "Scanning");
+            bundle.putString("upPromptString", "Please show MyDiscount QR code");
+//            bundle.putString("downPromptString", "Please show Bar code");
+            bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
+
+            try {
+                iScanner.startScan(bundle, 60, new ScannerListener.Stub() {
+                    @Override
+                    public void onSuccess(String barcode) throws RemoteException {
+
+//                        ToastUtil.toastOnUiThread(activity, barcode);
+
+
+//                        TransactionParams.getInstance().setQRData(barcode);
+//                        TransBasic.getInstance().printTest(1);
+                        Message msg = new Message();
+                        msg.getData().putString("msg", barcode);
+                        handler.sendMessage(msg);
+                    }
+
+                    @Override
+                    public void onError(int error, String message) throws RemoteException {
+
+                    }
+
+                    @Override
+                    public void onTimeout() throws RemoteException {
+                        ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
+                        finish();
+                    }
+
+                    @Override
+                    public void onCancel() throws RemoteException {
+                        ToastUtil.toastOnUiThread(activity, "Scanning canceled");
+                        finish();
+                    }
+                });
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void getAssortment(String cardId){
@@ -252,11 +314,11 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
     }
 
     Handler handler = new Handler() {
+        @SuppressLint("HandlerLeak")
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             Log.d("TAG", msg.getData().getString("msg"));
-            Toast.makeText(context, msg.getData().getString("msg"), Toast.LENGTH_SHORT).show();
             getAssortment(msg.getData().getString("msg"));
         }
     };

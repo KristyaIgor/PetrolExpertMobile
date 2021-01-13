@@ -53,20 +53,20 @@ public class DeviceHelper {
     }
 
     public void initDeviceHelper(BaseApp application){
-//        this.deviceService = application.getDeviceService();
-//        try {
-//            this.iemv = deviceService.getEMV();
-//            this.pinPad = deviceService.getPinpad(5);
-//            this.beeper = deviceService.getBeeper();
-//            this.led = deviceService.getLed();
-//            this.printer = deviceService.getPrinter();
-//            this.deviceInfo = deviceService.getDeviceInfo();
-//            this.scanner = deviceService.getScanner(0);
-//            this.iDukpt = deviceService.getDUKPT();
-//            this.serialPort = deviceService.getSerialPort("usb-rs232");
-//        } catch (RemoteException e) {
-//            e.printStackTrace();
-//        }
+        this.deviceService = application.getDeviceService();
+        try {
+            this.iemv = deviceService.getEMV();
+            this.pinPad = deviceService.getPinpad(5);
+            this.beeper = deviceService.getBeeper();
+            this.led = deviceService.getLed();
+            this.printer = deviceService.getPrinter();
+            this.deviceInfo = deviceService.getDeviceInfo();
+            this.scanner = deviceService.getScanner(0);
+            this.iDukpt = deviceService.getDUKPT();
+            this.serialPort = deviceService.getSerialPort("usb-rs232");
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 
     public IPinpad getPinPad() {

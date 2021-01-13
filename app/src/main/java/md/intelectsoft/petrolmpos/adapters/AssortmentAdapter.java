@@ -15,22 +15,23 @@ import java.util.List;
 
 import md.intelectsoft.petrolmpos.R;
 import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 
 
 /**
  * Created by Igor on 10.02.2020
  */
 
-public class AssortmentAdapter extends ArrayAdapter<Assortment> {
+public class AssortmentAdapter extends ArrayAdapter<AssortmentSerializable> {
     int layoutId;
 
-    public AssortmentAdapter(@NonNull Context context, int resource, @NonNull List<Assortment> objects) {
+    public AssortmentAdapter(@NonNull Context context, int resource, @NonNull List<AssortmentSerializable> objects) {
         super(context, resource, objects);
         this.layoutId = resource;
     }
 
     private static class ViewHolder {
-        TextView productName, productPrice;
+        TextView productName, productPrice, productCount;
     }
 
     @NonNull
@@ -47,6 +48,7 @@ public class AssortmentAdapter extends ArrayAdapter<Assortment> {
 
             viewHolder.productName = convertView.findViewById(R.id.text_view_asl_name);
             viewHolder.productPrice = convertView.findViewById(R.id.txt_asl_price);
+            viewHolder.productCount = convertView.findViewById(R.id.textCountProduct);
 
             convertView.setTag(viewHolder);
         }
@@ -54,10 +56,11 @@ public class AssortmentAdapter extends ArrayAdapter<Assortment> {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        Assortment item = getItem(position);
+        AssortmentSerializable item = getItem(position);
 
         viewHolder.productName.setText(item.getName());
         viewHolder.productPrice.setText(item.getPrice() + " MDL");
+        viewHolder.productCount.setText(String.valueOf(item.getCount()));
 
         return convertView;
     }
