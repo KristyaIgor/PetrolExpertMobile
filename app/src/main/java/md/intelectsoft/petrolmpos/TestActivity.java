@@ -66,7 +66,6 @@ import retrofit2.Response;
 @SuppressLint("NonConstantResourceId")
 public class TestActivity extends AppCompatActivity {
     @BindView(R.id.layoutApplyCard) ConstraintLayout layoutApplyCard;
-    @BindView(R.id.layoutCardInfo) ConstraintLayout layoutCardInfo;
     @BindView(R.id.textTerminalNumber) TextView terminalNumber;
     @BindView(R.id.textOperatorName) TextView terminalUser;
 
@@ -79,10 +78,7 @@ public class TestActivity extends AppCompatActivity {
     Context context;
 
     @OnClick(R.id.buttonScanCardCorporativ) void onScanCardCorp(){
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
-            startActivityForResult(new Intent(context, ScannedBarcodeActivity.class), 121);
-        else
-            ActivityCompat.requestPermissions(TestActivity.this, new String[]{Manifest.permission.CAMERA}, 201);
+        startActivity(new Intent(context, ScanCardCorporativActivity.class));
     }
 
     @OnClick(R.id.buttonScanMyDiscount) void onScanMyDiscount(){

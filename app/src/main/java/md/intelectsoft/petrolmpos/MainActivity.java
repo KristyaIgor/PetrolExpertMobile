@@ -51,6 +51,7 @@ import md.intelectsoft.petrolmpos.adapters.AssortmentAdapter;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
 import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
 import md.intelectsoft.petrolmpos.network.pe.result.RegisterDevice;
 import md.intelectsoft.petrolmpos.network.pe.result.SimpleResponse;
@@ -143,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
         requestMultiplePermissions();
 
         list_assortiment.setOnItemClickListener((parent, view, position, id) -> {
-            Assortment itemSelected = adapter.getItem(position);
+            AssortmentSerializable itemSelected = adapter.getItem(position);
 
             double countAvailable = itemSelected.getCount();
             if (countAvailable >= 1.0) {
@@ -395,7 +396,7 @@ public class MainActivity extends AppCompatActivity {
 
                         List<Assortment> assortmentList = getAssortment.getAssortmentList();
                         if(assortmentList != null && assortmentList.size() > 0){
-                            adapter = new AssortmentAdapter(context, R.layout.list_assortiment_view, assortmentList);
+//                            adapter = new AssortmentAdapter(context, R.layout.list_assortiment_view, assortmentList);
                             list_assortiment.setAdapter(adapter);
                         }
 
