@@ -1,9 +1,5 @@
 package md.intelectsoft.petrolmpos;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
@@ -18,9 +14,12 @@ import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -33,10 +32,10 @@ import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
-import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
-import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortmentSerializable;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCard;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCardSerializable;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfo;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfoSerializable;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -55,7 +54,9 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     IntentFilter writeTagFilters[];
 
     @OnClick(R.id.imageScanCameraCardCorp) void onScanCamera(){
-        startActivity(new Intent(context, ScanMyDiscountActivity.class));
+        Intent scanIntent = new Intent(context, ScanMyDiscountActivity.class);
+        scanIntent.putExtra("isDisc", false);
+        startActivity(scanIntent);
     }
 
     @OnClick(R.id.layoutCloseScanCardCorpActivity) void onCloseActivity() {
@@ -85,7 +86,21 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             nfcAdapter = NfcAdapter.getDefaultAdapter(this);
             if (nfcAdapter == null){
                 Toast.makeText(this, "This device doesn't support NFC.", Toast.LENGTH_LONG).show();
-                finish();
+            }
+
+            if(!nfcAdapter.isEnabled()){
+                new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                    .setTitle("Attention!")
+                    .setMessage("Turn on the NFC")
+                    .setCancelable(false)
+                    .setPositiveButton("Turn On", (dialogInterface, i) -> {
+                        Intent intent = new Intent(Settings.ACTION_NFC_SETTINGS);
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("Cancel",((dialogInterface, i) -> {
+
+                    }))
+                    .show();
             }
 
             readFromIntent(getIntent());
@@ -94,14 +109,13 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             IntentFilter tagDetected = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
             tagDetected.addCategory(Intent.CATEGORY_DEFAULT);
             writeTagFilters = new IntentFilter[] { tagDetected };
+
         }
     }
 
     private void readFromIntent(Intent intent) {
         String action = intent.getAction();
-        if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action)
-                || NfcAdapter.ACTION_TECH_DISCOVERED.equals(action)
-                || NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+        if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action) || NfcAdapter.ACTION_TECH_DISCOVERED.equals(action) || NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
 
             Tag tagFromIntent = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
@@ -121,7 +135,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                         Log.d("NFC", "MifareUltralight " + sb.toString());
 
                         byte[] id = tagFromIntent.getId();
-                        getAssortment(sb.toString());
+                        getCardInfoPEC(sb.toString());
 
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -190,7 +204,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
 
                         byte[] id = tagFromIntent.getId();
 
-                        getAssortment(sb.toString());
+                        getCardInfoPEC(sb.toString());
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -218,34 +232,25 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     @Override
     public void onPause(){
         super.onPause();
-        if (NfcAdapter.getDefaultAdapter(this) != null) nfcAdapter.disableForegroundDispatch(this);
+        if(!isVerifone){
+            if (NfcAdapter.getDefaultAdapter(this) != null) nfcAdapter.disableForegroundDispatch(this);
+        }
+
     }
     @Override
     public void onResume(){
         super.onResume();
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if(!isVerifone){
+            nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
-        if (nfcAdapter != null) {
-            nfcAdapter.enableForegroundDispatch(this, pendingIntent, writeTagFilters, null);
-        }
-
-    }
-    private String toReversedHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; ++i) {
-            if (i > 0) {
-                sb.append("-");
+            if (nfcAdapter != null) {
+                nfcAdapter.enableForegroundDispatch(this, pendingIntent, writeTagFilters, null);
             }
-            int b = bytes[i] & 0xff;
-            if (b < 0x10)
-                sb.append('0');
-            sb.append(Integer.toHexString(b));
         }
-        return sb.toString().toUpperCase();
     }
 
-    private void getAssortment(String cardId){
-        Call<GetAssortment> call = peServiceAPI.getAssortment(deviceId, cardId, "0" , "0");
+    private void getCardInfoPEC (String cardId){
+        Call<GetCardInfo> call = peServiceAPI.getCardInfo(deviceId, cardId);
 
         progressDialog.setMessage("Load assortment...");
         progressDialog.setCancelable(false);
@@ -260,40 +265,61 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         });
         progressDialog.show();
 
-        call.enqueue(new Callback<GetAssortment>() {
+        call.enqueue(new Callback<GetCardInfo>() {
             @Override
-            public void onResponse(Call<GetAssortment> call, Response<GetAssortment> response) {
-                GetAssortment getAssortment = response.body();
+            public void onResponse(Call<GetCardInfo> call, Response<GetCardInfo> response) {
+                GetCardInfo getCardInfo = response.body();
 
-                if(getAssortment != null){
-                    if(getAssortment.getNoError()){
-                        if(getAssortment.getAssortmentList() != null && getAssortment.getAssortmentList().size() > 0){
-                            List<AssortmentSerializable> assortmentSerializables = new ArrayList<>();
-                            for (Assortment item : getAssortment.getAssortmentList()){
-                                AssortmentSerializable assortmentSerializable = new AssortmentSerializable(
-                                        item.getCount(),
+                if(getCardInfo != null){
+                    if(getCardInfo.getErrorCode() == 0){
+                        if(getCardInfo.getAssortiment() != null && getCardInfo.getAssortiment().size() > 0){
+                            List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
+                            for (AssortmentCard item : getCardInfo.getAssortiment()){
+                                AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
+                                        item.getAssortimentID(),
+                                        item.getAssortmentCode(),
+                                        item.getDiscount(),
                                         item.getName(),
                                         item.getPrice(),
-                                        item.getPriceLineID()
+                                        item.getPriceLineID(),
+                                        item.getAdditionalLimit(),
+                                        item.getCardBalance(),
+                                        item.getDailyLimit(),
+                                        item.getDailyLimitConsumed(),
+                                        item.getLimit(),
+                                        item.getMonthlyLimit(),
+                                        item.getMonthlyLimitConsumed(),
+                                        item.getWeeklyLimit(),
+                                        item.getWeeklyLimitConsumed()
                                 );
-
                                 assortmentSerializables.add(assortmentSerializable);
                             }
 
-                            GetAssortmentSerializable assortmentSerializable = new GetAssortmentSerializable(
+                            GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
+                                    getCardInfo.getAllowedBalance(),
                                     assortmentSerializables,
-                                    getAssortment.getBalanta(),
-                                    getAssortment.getClientAmount(),
-                                    getAssortment.getClientName(),
-                                    getAssortment.getCredit(),
-                                    getAssortment.getLimitDay(),
-                                    getAssortment.getLimitMount(),
-                                    getAssortment.getLimitType(),
-                                    getAssortment.getWeeklyLimit()
+                                    getCardInfo.getBalance(),
+                                    getCardInfo.getBlockedAmount(),
+                                    getCardInfo.getCardEnabled(),
+                                    getCardInfo.getCardName(),
+                                    getCardInfo.getCardNumber(),
+                                    getCardInfo.getCustomerEnabled(),
+                                    getCardInfo.getCustomerId(),
+                                    getCardInfo.getCustomerName(),
+                                    getCardInfo.getDailyLimit(),
+                                    getCardInfo.getDailyLimitConsumed(),
+                                    getCardInfo.getLimitType(),
+                                    getCardInfo.getMonthlyLimit(),
+                                    getCardInfo.getMonthlyLimitConsumed(),
+                                    getCardInfo.getPhone(),
+                                    getCardInfo.getRefusedRefillClientAccount(),
+                                    getCardInfo.getTankCapacity(),
+                                    getCardInfo.getWeeklyLimit(),
+                                    getCardInfo.getWeeklyLimitConsumed()
                             );
 
                             Intent intent = new Intent(context, ClientMyDiscountCardCorporativActivity.class);
-                            intent.putExtra("ResponseClient", assortmentSerializable);
+                            intent.putExtra("ResponseClient", cardInfoSerializable);
                             startActivity(intent);
                             progressDialog.dismiss();
                             finish();
@@ -303,13 +329,13 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                 .setTitle("Attention!")
-                                .setMessage("Error check MyDiscount code! Message: " + getAssortment.getErrorMessage())
+                                .setMessage("Error check code! Message: " + getCardInfo.getErrorMessage() + ". Error code: " + getCardInfo.getErrorCode())
                                 .setCancelable(false)
                                 .setPositiveButton("OK", (dialogInterface, i) -> {
                                   finish();
                                 })
                                 .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                    getAssortment(cardId);
+                                    getCardInfoPEC(cardId);
                                 }))
                                 .show();
                     }
@@ -324,7 +350,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                                 finish();
                             })
                             .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                getAssortment(cardId);
+                                getCardInfoPEC(cardId);
                             }))
                             .show();
                 }
@@ -333,17 +359,17 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
 
 
             @Override
-            public void onFailure(Call<GetAssortment> call, Throwable t) {
+            public void onFailure(Call<GetCardInfo> call, Throwable t) {
                 progressDialog.dismiss();
                 new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                         .setTitle("Attention!")
-                        .setMessage("Failure check MyDiscount code! Message: " + t.getMessage())
+                        .setMessage("Failure check code! Message: " + t.getMessage())
                         .setCancelable(false)
                         .setPositiveButton("OK", (dialogInterface, i) -> {
                             finish();
                         })
                         .setNegativeButton("Retry",((dialogInterface, i) -> {
-                            getAssortment(cardId);
+                            getCardInfoPEC(cardId);
                         }))
                         .show();
             }

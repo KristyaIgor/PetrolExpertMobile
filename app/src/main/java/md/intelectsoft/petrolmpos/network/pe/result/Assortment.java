@@ -4,9 +4,15 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class Assortment {
-    @SerializedName("Count")
+    @SerializedName("AssortimentID")
     @Expose
-    private Double count;
+    private String assortimentID;
+    @SerializedName("AssortmentCode")
+    @Expose
+    private String assortmentCode;
+    @SerializedName("Discount")
+    @Expose
+    private Double discount;
     @SerializedName("Name")
     @Expose
     private String name;
@@ -17,12 +23,28 @@ public class Assortment {
     @Expose
     private String priceLineID;
 
-    public Double getCount() {
-        return count;
+    public String getAssortimentID() {
+        return assortimentID;
     }
 
-    public void setCount(Double count) {
-        this.count = count;
+    public void setAssortimentID(String assortimentID) {
+        this.assortimentID = assortimentID;
+    }
+
+    public String getAssortmentCode() {
+        return assortmentCode;
+    }
+
+    public void setAssortmentCode(String assortmentCode) {
+        this.assortmentCode = assortmentCode;
+    }
+
+    public Double getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(Double discount) {
+        this.discount = discount;
     }
 
     public String getName() {

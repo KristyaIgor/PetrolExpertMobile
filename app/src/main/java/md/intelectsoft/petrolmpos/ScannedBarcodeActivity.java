@@ -6,17 +6,13 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.util.SparseArray;
-import android.view.MenuItem;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -28,28 +24,20 @@ import com.google.android.gms.vision.barcode.Barcode;
 import com.google.android.gms.vision.barcode.BarcodeDetector;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
-import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
-import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortmentSerializable;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCard;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCardSerializable;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfo;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfoSerializable;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static md.intelectsoft.petrolmpos.Utils.NetworkUtils.generateURL_GetCardInfo;
-import static md.intelectsoft.petrolmpos.Utils.NetworkUtils.getResponse_from_GetCardInfo;
 
 public class ScannedBarcodeActivity extends AppCompatActivity {
 
@@ -155,7 +143,7 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             Log.d("TAG", msg.getData().getString("msg"));
-            getAssortment(msg.getData().getString("msg"));
+            getCardInfoPEC(msg.getData().getString("msg"));
         }
     };
 
@@ -171,8 +159,8 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
         initialiseDetectorsAndSources();
     }
 
-    private void getAssortment(String cardId){
-        Call<GetAssortment> call = peServiceAPI.getAssortment(deviceId, cardId, "0" , "0");
+    private void getCardInfoPEC(String cardId){
+        Call<GetCardInfo> call = peServiceAPI.getCardInfo(deviceId, cardId);
 
         progressDialog.setMessage("Load assortment...");
         progressDialog.setCancelable(false);
@@ -187,40 +175,60 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
         });
         progressDialog.show();
 
-        call.enqueue(new Callback<GetAssortment>() {
+        call.enqueue(new Callback<GetCardInfo>() {
             @Override
-            public void onResponse(Call<GetAssortment> call, Response<GetAssortment> response) {
-                GetAssortment getAssortment = response.body();
-
+            public void onResponse(Call<GetCardInfo> call, Response<GetCardInfo> response) {
+                GetCardInfo getAssortment = response.body();
                 if(getAssortment != null){
-                    if(getAssortment.getNoError()){
-                        if(getAssortment.getAssortmentList() != null && getAssortment.getAssortmentList().size() > 0){
-                            List<AssortmentSerializable> assortmentSerializables = new ArrayList<>();
-                            for (Assortment item : getAssortment.getAssortmentList()){
-                                AssortmentSerializable assortmentSerializable = new AssortmentSerializable(
-                                        item.getCount(),
+                    if(getAssortment.getErrorCode() == 0){
+                        if(getAssortment.getAssortiment() != null && getAssortment.getAssortiment().size() > 0){
+                            List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
+                            for (AssortmentCard item : getAssortment.getAssortiment()){
+                                AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
+                                        item.getAssortimentID(),
+                                        item.getAssortmentCode(),
+                                        item.getDiscount(),
                                         item.getName(),
                                         item.getPrice(),
-                                        item.getPriceLineID()
+                                        item.getPriceLineID(),
+                                        item.getAdditionalLimit(),
+                                        item.getCardBalance(),
+                                        item.getDailyLimit(),
+                                        item.getDailyLimitConsumed(),
+                                        item.getLimit(),
+                                        item.getMonthlyLimit(),
+                                        item.getMonthlyLimitConsumed(),
+                                        item.getWeeklyLimit(),
+                                        item.getWeeklyLimitConsumed()
                                 );
-
                                 assortmentSerializables.add(assortmentSerializable);
                             }
 
-                            GetAssortmentSerializable assortmentSerializable = new GetAssortmentSerializable(
+                            GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
+                                    getAssortment.getAllowedBalance(),
                                     assortmentSerializables,
-                                    getAssortment.getBalanta(),
-                                    getAssortment.getClientAmount(),
-                                    getAssortment.getClientName(),
-                                    getAssortment.getCredit(),
-                                    getAssortment.getLimitDay(),
-                                    getAssortment.getLimitMount(),
+                                    getAssortment.getBalance(),
+                                    getAssortment.getBlockedAmount(),
+                                    getAssortment.getCardEnabled(),
+                                    getAssortment.getCardName(),
+                                    getAssortment.getCardNumber(),
+                                    getAssortment.getCustomerEnabled(),
+                                    getAssortment.getCustomerId(),
+                                    getAssortment.getCustomerName(),
+                                    getAssortment.getDailyLimit(),
+                                    getAssortment.getDailyLimitConsumed(),
                                     getAssortment.getLimitType(),
-                                    getAssortment.getWeeklyLimit()
+                                    getAssortment.getMonthlyLimit(),
+                                    getAssortment.getMonthlyLimitConsumed(),
+                                    getAssortment.getPhone(),
+                                    getAssortment.getRefusedRefillClientAccount(),
+                                    getAssortment.getTankCapacity(),
+                                    getAssortment.getWeeklyLimit(),
+                                    getAssortment.getWeeklyLimitConsumed()
                             );
 
                             Intent intent = new Intent(ScannedBarcodeActivity.this, ClientMyDiscountCardCorporativActivity.class);
-                            intent.putExtra("ResponseClient", assortmentSerializable);
+                            intent.putExtra("ResponseClient", cardInfoSerializable);
                             startActivity(intent);
                             progressDialog.dismiss();
                             finish();
@@ -236,7 +244,7 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
                                     counter = 0;
                                 })
                                 .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                    getAssortment(cardId);
+                                    getCardInfoPEC(cardId);
                                 }))
                                 .show();
                     }
@@ -251,7 +259,7 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
                                 counter = 0;
                             })
                             .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                getAssortment(cardId);
+                                getCardInfoPEC(cardId);
                             }))
                             .show();
                 }
@@ -260,7 +268,7 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
 
 
             @Override
-            public void onFailure(Call<GetAssortment> call, Throwable t) {
+            public void onFailure(Call<GetCardInfo> call, Throwable t) {
                 progressDialog.dismiss();
                 new MaterialAlertDialogBuilder(ScannedBarcodeActivity.this, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                         .setTitle("Attention!")
@@ -270,7 +278,7 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
                             counter = 0;
                         })
                         .setNegativeButton("Retry",((dialogInterface, i) -> {
-                            getAssortment(cardId);
+                            getCardInfoPEC(cardId);
                         }))
                         .show();
             }

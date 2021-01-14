@@ -14,23 +14,22 @@ import java.util.List;
 
 import md.intelectsoft.petrolmpos.R;
 import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCardSerializable;
-import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 
 
 /**
  * Created by Igor on 10.02.2020
  */
 
-public class AssortmentAdapter extends ArrayAdapter<AssortmentSerializable> {
+public class AssortmentCardAdapter extends ArrayAdapter<AssortmentCardSerializable> {
     int layoutId;
 
-    public AssortmentAdapter(@NonNull Context context, int resource, @NonNull List<AssortmentSerializable> objects) {
+    public AssortmentCardAdapter(@NonNull Context context, int resource, @NonNull List<AssortmentCardSerializable> objects) {
         super(context, resource, objects);
         this.layoutId = resource;
     }
 
     private static class ViewHolder {
-        TextView productName, productPrice, productDiscount, titleDiscount;
+        TextView productName, productPrice, productCount;
     }
 
     @NonNull
@@ -43,13 +42,11 @@ public class AssortmentAdapter extends ArrayAdapter<AssortmentSerializable> {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
         if(convertView == null){
-            convertView = inflater.inflate(layoutId ,parent,false);
+            convertView = inflater.inflate(R.layout.list_assortiment_view ,parent,false);
 
-            viewHolder.productName = convertView.findViewById(R.id.textProductName);
-            viewHolder.productPrice = convertView.findViewById(R.id.txtPriceProduct);
-            viewHolder.productDiscount = convertView.findViewById(R.id.textDiscountProduct);
-            viewHolder.titleDiscount = convertView.findViewById(R.id.textTitleDiscount);
-
+            viewHolder.productName = convertView.findViewById(R.id.text_view_asl_name);
+            viewHolder.productPrice = convertView.findViewById(R.id.txt_asl_price);
+            viewHolder.productCount = convertView.findViewById(R.id.textCountProduct);
 
             convertView.setTag(viewHolder);
         }
@@ -57,21 +54,11 @@ public class AssortmentAdapter extends ArrayAdapter<AssortmentSerializable> {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        AssortmentSerializable item = getItem(position);
+        AssortmentCardSerializable item = getItem(position);
 
         viewHolder.productName.setText(item.getName());
         viewHolder.productPrice.setText(item.getPrice() + " MDL");
-
-        if(item.getDiscount() == 0){
-            viewHolder.titleDiscount.setVisibility(View.GONE);
-            viewHolder.productDiscount.setVisibility(View.GONE);
-        }
-        else{
-            viewHolder.titleDiscount.setVisibility(View.VISIBLE);
-            viewHolder.productDiscount.setVisibility(View.VISIBLE);
-
-            viewHolder.productDiscount.setText(String.valueOf(item.getDiscount()));
-        }
+        viewHolder.productCount.setText(String.valueOf(item.getCardBalance()));
 
         return convertView;
     }
