@@ -1,29 +1,46 @@
 package md.intelectsoft.petrolmpos.network.pe.result;
 
-import com.google.gson.annotations.Expose;
-import com.google.gson.annotations.SerializedName;
-
 import java.io.Serializable;
 
 public class AssortmentSerializable implements Serializable {
-    private Double count;
+    private String assortimentID;
+    private String assortmentCode;
+    private Double discount;
     private String name;
     private Double price;
     private String priceLineID;
 
-    public AssortmentSerializable(Double count, String name, Double price, String priceLineID) {
-        this.count = count;
+    public AssortmentSerializable(String assortimentID, String assortmentCode, Double discount, String name, Double price, String priceLineID) {
+        this.assortimentID = assortimentID;
+        this.assortmentCode = assortmentCode;
+        this.discount = discount;
         this.name = name;
         this.price = price;
         this.priceLineID = priceLineID;
     }
 
-    public Double getCount() {
-        return count;
+    public String getAssortimentID() {
+        return assortimentID;
     }
 
-    public void setCount(Double count) {
-        this.count = count;
+    public void setAssortimentID(String assortimentID) {
+        this.assortimentID = assortimentID;
+    }
+
+    public String getAssortmentCode() {
+        return assortmentCode;
+    }
+
+    public void setAssortmentCode(String assortmentCode) {
+        this.assortmentCode = assortmentCode;
+    }
+
+    public Double getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(Double discount) {
+        this.discount = discount;
     }
 
     public String getName() {

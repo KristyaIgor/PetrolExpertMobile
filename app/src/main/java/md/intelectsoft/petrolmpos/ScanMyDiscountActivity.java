@@ -1,9 +1,5 @@
 package md.intelectsoft.petrolmpos;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
@@ -20,7 +16,11 @@ import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Detector;
@@ -38,17 +38,15 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
-import md.intelectsoft.petrolmpos.network.broker.BrokerServiceAPI;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
-import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
-import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortmentSerializable;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCard;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCardSerializable;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfo;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfoSerializable;
 import md.intelectsoft.petrolmpos.verifone.Utilities.DeviceHelper;
 import md.intelectsoft.petrolmpos.verifone.Utilities.ToastUtil;
 import md.intelectsoft.petrolmpos.verifone.transaction.AppParams;
-import md.intelectsoft.petrolmpos.verifone.transaction.TransBasic;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -58,6 +56,8 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
     @BindView(R.id.surfaceViewMyDiscount) SurfaceView surfaceView;
     @BindView(R.id.layoutScanCamera) ConstraintLayout constraintLayoutScanCamera;
+
+    @BindView(R.id.textTitleActivity) TextView titleApp;
 
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
@@ -70,6 +70,8 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
     ProgressDialog progressDialog;
     PEServiceAPI peServiceAPI;
 
+    String title = "Please show MyDiscount QR code";
+    String titlePhone = "Position the MyDiscount QR code\nwithin the frame";
 
     IScanner iScanner;
     ScanMyDiscountActivity activity;
@@ -93,6 +95,14 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         String uri = SPFHelp.getInstance().getString("URI", null);
         peServiceAPI = PERetrofitClient.getPEService(uri);
 
+        boolean isDiscount = getIntent().getBooleanExtra("isDisc", false);
+
+
+        if(!isDiscount){
+            title = "Please show QR code";
+            titlePhone = "Position the QR code or Barcode\nwithin the frame";
+        }
+
         isVerifone = BaseApp.isVFServiceConnected();
 
         if(isVerifone) {
@@ -102,7 +112,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
             Bundle bundle = new Bundle();
             bundle.putString("topTitleString", "Scanning");
-            bundle.putString("upPromptString", "Please show MyDiscount QR code");
+            bundle.putString("upPromptString", title);
 //            bundle.putString("downPromptString", "Please show Bar code");
             bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
 
@@ -142,10 +152,15 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+        else{
+            titleApp.setText(titlePhone);
+        }
+
+
     }
 
-    private void getAssortment(String cardId){
-        Call<GetAssortment> call = peServiceAPI.getAssortment(deviceId, cardId, "0" , "0");
+    private void getCardInfoPEC (String cardId){
+        Call<GetCardInfo> call = peServiceAPI.getCardInfo(deviceId, cardId);
 
         progressDialog.setMessage("Load assortment...");
         progressDialog.setCancelable(false);
@@ -160,56 +175,114 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         });
         progressDialog.show();
 
-        call.enqueue(new Callback<GetAssortment>() {
+        call.enqueue(new Callback<GetCardInfo>() {
             @Override
-            public void onResponse(Call<GetAssortment> call, Response<GetAssortment> response) {
-                GetAssortment getAssortment = response.body();
+            public void onResponse(Call<GetCardInfo> call, Response<GetCardInfo> response) {
+                GetCardInfo getCardInfo = response.body();
 
-                if(getAssortment != null){
-                    if(getAssortment.getNoError()){
-                        if(getAssortment.getAssortmentList() != null && getAssortment.getAssortmentList().size() > 0){
-                            List<AssortmentSerializable> assortmentSerializables = new ArrayList<>();
-                            for (Assortment item : getAssortment.getAssortmentList()){
-                                AssortmentSerializable assortmentSerializable = new AssortmentSerializable(
-                                        item.getCount(),
+                if(getCardInfo != null){
+                    if(getCardInfo.getErrorCode() == 0){
+                        if(getCardInfo.getAssortiment() != null && getCardInfo.getAssortiment().size() > 0){
+                            List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
+                            for (AssortmentCard item : getCardInfo.getAssortiment()){
+                                AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
+                                        item.getAssortimentID(),
+                                        item.getAssortmentCode(),
+                                        item.getDiscount(),
                                         item.getName(),
                                         item.getPrice(),
-                                        item.getPriceLineID()
+                                        item.getPriceLineID(),
+                                        item.getAdditionalLimit(),
+                                        item.getCardBalance(),
+                                        item.getDailyLimit(),
+                                        item.getDailyLimitConsumed(),
+                                        item.getLimit(),
+                                        item.getMonthlyLimit(),
+                                        item.getMonthlyLimitConsumed(),
+                                        item.getWeeklyLimit(),
+                                        item.getWeeklyLimitConsumed()
                                 );
-
                                 assortmentSerializables.add(assortmentSerializable);
                             }
 
-                            GetAssortmentSerializable assortmentSerializable = new GetAssortmentSerializable(
+                            GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
+                                    getCardInfo.getAllowedBalance(),
                                     assortmentSerializables,
-                                    getAssortment.getBalanta(),
-                                    getAssortment.getClientAmount(),
-                                    getAssortment.getClientName(),
-                                    getAssortment.getCredit(),
-                                    getAssortment.getLimitDay(),
-                                    getAssortment.getLimitMount(),
-                                    getAssortment.getLimitType(),
-                                    getAssortment.getWeeklyLimit()
+                                    getCardInfo.getBalance(),
+                                    getCardInfo.getBlockedAmount(),
+                                    getCardInfo.getCardEnabled(),
+                                    getCardInfo.getCardName(),
+                                    getCardInfo.getCardNumber(),
+                                    getCardInfo.getCustomerEnabled(),
+                                    getCardInfo.getCustomerId(),
+                                    getCardInfo.getCustomerName(),
+                                    getCardInfo.getDailyLimit(),
+                                    getCardInfo.getDailyLimitConsumed(),
+                                    getCardInfo.getLimitType(),
+                                    getCardInfo.getMonthlyLimit(),
+                                    getCardInfo.getMonthlyLimitConsumed(),
+                                    getCardInfo.getPhone(),
+                                    getCardInfo.getRefusedRefillClientAccount(),
+                                    getCardInfo.getTankCapacity(),
+                                    getCardInfo.getWeeklyLimit(),
+                                    getCardInfo.getWeeklyLimitConsumed()
                             );
 
                             Intent intent = new Intent(ScanMyDiscountActivity.this, ClientMyDiscountCardCorporativActivity.class);
-                            intent.putExtra("ResponseClient", assortmentSerializable);
+                            intent.putExtra("ResponseClient", cardInfoSerializable);
                             startActivity(intent);
                             progressDialog.dismiss();
                             finish();
                         }
 
-                    }else{
+                    }
+                    else{
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                 .setTitle("Attention!")
-                                .setMessage("Error check MyDiscount code! Message: " + getAssortment.getErrorMessage())
+                                .setMessage("Error check code! Message: " + getCardInfo.getErrorMessage())
                                 .setCancelable(false)
                                 .setPositiveButton("OK", (dialogInterface, i) -> {
                                     counter = 0;
+                                    if(isVerifone){
+                                        Bundle bundle = new Bundle();
+                                        bundle.putString("topTitleString", "Scanning");
+                                        bundle.putString("upPromptString", title);
+                                        bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
+
+                                        try {
+                                            iScanner.startScan(bundle, 60, new ScannerListener.Stub() {
+                                                @Override
+                                                public void onSuccess(String barcode) throws RemoteException {
+                                                    Message msg = new Message();
+                                                    msg.getData().putString("msg", barcode);
+                                                    handler.sendMessage(msg);
+                                                }
+
+                                                @Override
+                                                public void onError(int error, String message) throws RemoteException {
+
+                                                }
+
+                                                @Override
+                                                public void onTimeout() throws RemoteException {
+                                                    ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
+                                                    finish();
+                                                }
+
+                                                @Override
+                                                public void onCancel() throws RemoteException {
+                                                    ToastUtil.toastOnUiThread(activity, "Scanning canceled");
+                                                    finish();
+                                                }
+                                            });
+                                        } catch (RemoteException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
                                 })
                                 .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                    getAssortment(cardId);
+                                    getCardInfoPEC(cardId);
                                 }))
                                 .show();
                     }
@@ -218,13 +291,49 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
                     progressDialog.dismiss();
                     new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                             .setTitle("Attention!")
-                            .setMessage("Error check MyDiscount code! Response is empty!")
+                            .setMessage("Error check code! Response is empty!")
                             .setCancelable(false)
                             .setPositiveButton("OK", (dialogInterface, i) -> {
                                 counter = 0;
+                                if(isVerifone){
+                                    Bundle bundle = new Bundle();
+                                    bundle.putString("topTitleString", "Scanning");
+                                    bundle.putString("upPromptString", title);
+                                    bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
+
+                                    try {
+                                        iScanner.startScan(bundle, 60, new ScannerListener.Stub() {
+                                            @Override
+                                            public void onSuccess(String barcode) throws RemoteException {
+                                                Message msg = new Message();
+                                                msg.getData().putString("msg", barcode);
+                                                handler.sendMessage(msg);
+                                            }
+
+                                            @Override
+                                            public void onError(int error, String message) throws RemoteException {
+
+                                            }
+
+                                            @Override
+                                            public void onTimeout() throws RemoteException {
+                                                ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
+                                                finish();
+                                            }
+
+                                            @Override
+                                            public void onCancel() throws RemoteException {
+                                                ToastUtil.toastOnUiThread(activity, "Scanning canceled");
+                                                finish();
+                                            }
+                                        });
+                                    } catch (RemoteException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
                             })
                             .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                getAssortment(cardId);
+                                getCardInfoPEC(cardId);
                             }))
                             .show();
                 }
@@ -233,17 +342,53 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
 
             @Override
-            public void onFailure(Call<GetAssortment> call, Throwable t) {
+            public void onFailure(Call<GetCardInfo> call, Throwable t) {
                 progressDialog.dismiss();
                 new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                         .setTitle("Attention!")
-                        .setMessage("Failure check MyDiscount code! Message: " + t.getMessage())
+                        .setMessage("Failure check code! Message: " + t.getMessage())
                         .setCancelable(false)
                         .setPositiveButton("OK", (dialogInterface, i) -> {
                             counter = 0;
+                            if(isVerifone){
+                                Bundle bundle = new Bundle();
+                                bundle.putString("topTitleString", "Scanning");
+                                bundle.putString("upPromptString", title);
+                                bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
+
+                                try {
+                                    iScanner.startScan(bundle, 60, new ScannerListener.Stub() {
+                                        @Override
+                                        public void onSuccess(String barcode) throws RemoteException {
+                                            Message msg = new Message();
+                                            msg.getData().putString("msg", barcode);
+                                            handler.sendMessage(msg);
+                                        }
+
+                                        @Override
+                                        public void onError(int error, String message) throws RemoteException {
+
+                                        }
+
+                                        @Override
+                                        public void onTimeout() throws RemoteException {
+                                            ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
+                                            finish();
+                                        }
+
+                                        @Override
+                                        public void onCancel() throws RemoteException {
+                                            ToastUtil.toastOnUiThread(activity, "Scanning canceled");
+                                            finish();
+                                        }
+                                    });
+                                } catch (RemoteException e) {
+                                    e.printStackTrace();
+                                }
+                            }
                         })
                         .setNegativeButton("Retry",((dialogInterface, i) -> {
-                            getAssortment(cardId);
+                            getCardInfoPEC(cardId);
                         }))
                         .show();
             }
@@ -319,7 +464,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             Log.d("TAG", msg.getData().getString("msg"));
-            getAssortment(msg.getData().getString("msg"));
+            getCardInfoPEC(msg.getData().getString("msg"));
         }
     };
 

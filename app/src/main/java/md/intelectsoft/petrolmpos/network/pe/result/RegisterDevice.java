@@ -8,18 +8,9 @@ public class RegisterDevice {
     @SerializedName("ErrorMessage")
     @Expose
     private String errorMessage;
-    @SerializedName("NoError")
+    @SerializedName("ErrorCode")
     @Expose
-    private Boolean noError;
-    @SerializedName("Latitude")
-    @Expose
-    private Double latitude;
-    @SerializedName("Longitude")
-    @Expose
-    private Double longitude;
-    @SerializedName("RadiusAroundPoint")
-    @Expose
-    private Integer radiusAroundPoint;
+    private int errorCode;
     @SerializedName("Registred")
     @Expose
     private Boolean registred;
@@ -41,36 +32,12 @@ public class RegisterDevice {
         this.errorMessage = errorMessage;
     }
 
-    public Boolean getNoError() {
-        return noError;
+    public Integer getNoError() {
+        return errorCode;
     }
 
-    public void setNoError(Boolean noError) {
-        this.noError = noError;
-    }
-
-    public Double getLatitude() {
-        return latitude;
-    }
-
-    public void setLatitude(Double latitude) {
-        this.latitude = latitude;
-    }
-
-    public Double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(Double longitude) {
-        this.longitude = longitude;
-    }
-
-    public Integer getRadiusAroundPoint() {
-        return radiusAroundPoint;
-    }
-
-    public void setRadiusAroundPoint(Integer radiusAroundPoint) {
-        this.radiusAroundPoint = radiusAroundPoint;
+    public void setNoError(Integer noError) {
+        this.errorCode = noError;
     }
 
     public Boolean getRegistred() {

@@ -96,7 +96,7 @@
             app:layout_constraintTop_toBottomOf="@+id/textCardBalance" />
 
         <TextView
-            android:id="@+id/textView40"
+            android:id="@+id/textNameOfAmount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -118,7 +118,7 @@
             android:textColor="@color/white"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/textView40"
+            app:layout_constraintStart_toEndOf="@+id/textNameOfAmount"
             app:layout_constraintTop_toBottomOf="@+id/divider6" />
 
         <TextView
@@ -204,7 +204,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView40" />
+            app:layout_constraintTop_toBottomOf="@+id/textNameOfAmount" />
 
         <ListView
             android:id="@+id/listOfAvailableProducts"

@@ -29,10 +29,12 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -56,6 +58,8 @@ import md.intelectsoft.petrolmpos.network.broker.Results.AppDataRegisterApplicat
 import md.intelectsoft.petrolmpos.network.broker.Results.RegisterApplication;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
+import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
 import md.intelectsoft.petrolmpos.network.pe.result.RegisterDevice;
 import md.intelectsoft.petrolmpos.network.pe.result.SimpleResponse;
@@ -89,7 +93,93 @@ public class TestActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.buttonScanWithoutIdentify) void onScanWithoutIdentify(){
+        Call<GetAssortment> getAssortmentCall = peServiceAPI.getAssortment(deviceId);
+        progressDialog.setMessage("Load available products...");
+        progressDialog.setCancelable(false);
+        progressDialog.setIndeterminate(true);
+        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                getAssortmentCall.cancel();
+                if (getAssortmentCall.isCanceled())
+                    dialog.dismiss();
+            }
+        });
+        progressDialog.show();
 
+        getAssortmentCall.enqueue(new Callback<GetAssortment>() {
+            @Override
+            public void onResponse(Call<GetAssortment> call, Response<GetAssortment> response) {
+                GetAssortment getAssortment = response.body();
+
+                if(getAssortment != null){
+                    if(getAssortment.getErrorCode() == 0){
+                        if(getAssortment.getAssortment() != null && getAssortment.getAssortment().size() > 0){
+
+                            List<AssortmentSerializable> listOfProducts = new ArrayList<>();
+
+                            for(Assortment item: getAssortment.getAssortment()){
+                                AssortmentSerializable product = new AssortmentSerializable(item.getAssortimentID(),
+                                        item.getAssortmentCode(),
+                                        item.getDiscount(),
+                                        item.getName(),
+                                        item.getPrice(),
+                                        item.getPriceLineID());
+
+                                listOfProducts.add(product);
+                            }
+
+                            progressDialog.dismiss();
+
+                            Intent intent = new Intent(context, ProductsWithoutIndentingActivity.class);
+                            intent.putExtra("ResponseAssortment", (Serializable) listOfProducts);
+                            startActivity(intent);
+                        }
+                        else{
+                            progressDialog.dismiss();
+                            new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                    .setTitle("Attention!")
+                                    .setMessage("List of products is empty!")
+                                    .setCancelable(false)
+                                    .setPositiveButton("OK", null)
+                                    .show();
+                        }
+                    }
+                    else{
+                        progressDialog.dismiss();
+                        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                .setTitle("Attention!")
+                                .setMessage("Error load products! Message: " + getAssortment.getErrorMessage() + ". Error code: " + getAssortment.getErrorCode())
+                                .setCancelable(false)
+                                .setPositiveButton("OK", null)
+                                .show();
+                    }
+                }
+                else{
+                    progressDialog.dismiss();
+                    new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                            .setTitle("Attention!")
+                            .setMessage("Error load products! Response is empty!")
+                            .setCancelable(false)
+                            .setPositiveButton("OK", (dialogInterface, i) -> {
+                            })
+                            .show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<GetAssortment> call, Throwable t) {
+                progressDialog.dismiss();
+                new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                        .setTitle("Attention!")
+                        .setMessage("Failure load products! Message: " + t.getMessage())
+                        .setCancelable(false)
+                        .setPositiveButton("OK", (dialogInterface, i) -> {
+
+                        })
+                        .show();
+            }
+        });
     }
 
     @OnClick(R.id.buttonPrintX) void onPrintX(){
@@ -130,14 +220,7 @@ public class TestActivity extends AppCompatActivity {
         }
 
         getURI(licenseId);
-
-        boolean isVerifone = BaseApp.isVFServiceConnected();
-
     }
-
-    View.OnClickListener textListener = v -> {
-
-    };
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -164,34 +247,34 @@ public class TestActivity extends AppCompatActivity {
         }
     }
 
-    private void getAssortment(String cardId){
-        Call<GetAssortment> call = peServiceAPI.getAssortment(deviceId, cardId, "0" , "0");
-
-        progressDialog.setMessage("Get assortment...");
-        progressDialog.setCancelable(false);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                call.cancel();
-                if (call.isCanceled())
-                    dialog.dismiss();
-            }
-        });
-        progressDialog.show();
-
-        call.enqueue(new Callback<GetAssortment>() {
-            @Override
-            public void onResponse(Call<GetAssortment> call, Response<GetAssortment> response) {
-
-            }
-
-            @Override
-            public void onFailure(Call<GetAssortment> call, Throwable t) {
-
-            }
-        });
-    }
+//    private void getAssortment(String cardId){
+//        Call<GetAssortment> call = peServiceAPI.getAssortment(deviceId, cardId, "0" , "0");
+//
+//        progressDialog.setMessage("Get assortment...");
+//        progressDialog.setCancelable(false);
+//        progressDialog.setIndeterminate(true);
+//        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                call.cancel();
+//                if (call.isCanceled())
+//                    dialog.dismiss();
+//            }
+//        });
+//        progressDialog.show();
+//
+//        call.enqueue(new Callback<GetAssortment>() {
+//            @Override
+//            public void onResponse(Call<GetAssortment> call, Response<GetAssortment> response) {
+//
+//            }
+//
+//            @Override
+//            public void onFailure(Call<GetAssortment> call, Throwable t) {
+//
+//            }
+//        });
+//    }
 
     private void printX() {
         Call<SimpleResponse> call = peServiceAPI.printX(deviceId);
@@ -229,7 +312,7 @@ public class TestActivity extends AppCompatActivity {
     }
 
     private void registerDevice() {
-        Call<RegisterDevice> call = peServiceAPI.registerDevice(deviceId, "Android " + deviceModel, "0" , "0");
+        Call<RegisterDevice> call = peServiceAPI.registerDevice(deviceId, "Android " + deviceModel);
 
         progressDialog.setMessage("Register device...");
         progressDialog.setCancelable(false);
@@ -250,7 +333,7 @@ public class TestActivity extends AppCompatActivity {
                 progressDialog.dismiss();
                 RegisterDevice device = response.body();
                 if(device != null)
-                    if(device.getNoError() && device.getRegistred()){
+                    if(device.getNoError() == 0 && device.getRegistred()){
                         terminalUser.setText(device.getOwner());
                         terminalNumber.setText("Nr: " + device.getRegistredNumber());
                         SPFHelp.getInstance().putInt("RegisteredNumber", device.getRegistredNumber());
@@ -365,7 +448,7 @@ public class TestActivity extends AppCompatActivity {
 
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                 .setTitle("Application not activated!")
-                                .setMessage("The application is not activated! Please activate can you continue.")
+                                .setMessage("The application is not activated! Please activate it can you continue.")
                                 .setCancelable(false)
                                 .setPositiveButton("OK", (dialogInterface, i) -> {
                                     finish();
@@ -383,13 +466,34 @@ public class TestActivity extends AppCompatActivity {
 
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                 .setTitle("License not activated!")
-                                .setMessage("The license for this application not activated! Please activate can you continue.")
+                                .setMessage("The license for this application not activated! Please activate it can you continue.")
                                 .setCancelable(false)
                                 .setPositiveButton("OK", (dialogInterface, i) -> {
+                                    startActivity(new Intent(context, AuthorizeActivity.class));
                                     finish();
                                 })
                                 .show();
                     }
+                    else if(result.getErrorCode() == 124){
+                        Map<String,String> licenseData = new HashMap<>();
+                        licenseData.put("LicenseID", null);
+                        licenseData.put("LicenseCode", null);
+                        licenseData.put("CompanyName", null);
+                        licenseData.put("CompanyIDNO", null);
+
+                        SPFHelp.getInstance().putStrings(licenseData);
+
+                        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                .setTitle("License not exist!")
+                                .setMessage("The license for this application not exist! Please enter valid license can continue.")
+                                .setCancelable(false)
+                                .setPositiveButton("OK", (dialogInterface, i) -> {
+                                    startActivity(new Intent(context, AuthorizeActivity.class));
+                                    finish();
+                                })
+                                .show();
+                    }
+
                     else {
                         Toast.makeText(context, result.getErrorMessage(), Toast.LENGTH_SHORT).show();
                     }

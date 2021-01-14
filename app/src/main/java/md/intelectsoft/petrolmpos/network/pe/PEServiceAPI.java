@@ -1,6 +1,7 @@
 package md.intelectsoft.petrolmpos.network.pe;
 
 import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfo;
 import md.intelectsoft.petrolmpos.network.pe.result.RegisterDevice;
 import md.intelectsoft.petrolmpos.network.pe.result.SimpleResponse;
 import retrofit2.Call;
@@ -12,12 +13,13 @@ public interface PEServiceAPI {
     Call<Boolean> ping ();
 
     @GET("json/RegisterDevice")
-    Call<RegisterDevice> registerDevice (@Query("deviceId") String deviceId, @Query("Name") String name,
-                                         @Query("Latitude") String lat, @Query("Longitude") String lon);
+    Call<RegisterDevice> registerDevice (@Query("StationID") String deviceId, @Query("Name") String name);
 
-    @GET("json/GetAssortment")
-    Call<GetAssortment> getAssortment (@Query("deviceId") String deviceId, @Query("CardID") String cardId,
-                                       @Query("Latitude") String lat, @Query("Longitude") String lon);
+    @GET("json/GetAsortment")
+    Call<GetAssortment> getAssortment (@Query("StationID") String deviceId);
+
+    @GET("json/GetCardInfo")
+    Call<GetCardInfo> getCardInfo (@Query("StationID") String deviceId, @Query("CardID") String cardId);
 
     @GET("json/CreateBill")
     Call<SimpleResponse> createBill (@Query("deviceId") String deviceId, @Query("CardID") String cardId,

@@ -1,30 +1,19 @@
 package md.intelectsoft.petrolmpos;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import java.io.Serializable;
-import java.nio.channels.AsynchronousServerSocketChannel;
-import java.util.List;
+import androidx.appcompat.app.AppCompatActivity;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import md.intelectsoft.petrolmpos.adapters.AssortmentAdapter;
-import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortmentSerializable;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import md.intelectsoft.petrolmpos.adapters.AssortmentCardAdapter;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfoSerializable;
 
 @SuppressLint("NonConstantResourceId")
 public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
@@ -32,14 +21,14 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
     @BindView(R.id.textClientCardName) TextView clientCardName;
     @BindView(R.id.textCardBalance) TextView clientBalance;
     @BindView(R.id.textClientAmount) TextView clientAmount;
-
+    @BindView(R.id.textNameOfAmount) TextView clientAmountType;
     @BindView(R.id.textClientLimitDay) TextView clientLimitDay;
     @BindView(R.id.textClientLimitWeek) TextView clientLimitWeek;
     @BindView(R.id.textClientLimitMonth) TextView clientLimitMonth;
 
     @BindView(R.id.listOfAvailableProducts) ListView clientProducts;
 
-    AssortmentAdapter adapter;
+    AssortmentCardAdapter adapter;
     Context context;
 
     @OnClick(R.id.layoutCloseClientInfoActivity) void onCloseActivity(){
@@ -57,30 +46,36 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
         context = this;
 
         Intent intent = getIntent();
-        GetAssortmentSerializable assortmentSerializable = (GetAssortmentSerializable) intent.getSerializableExtra("ResponseClient");
+        GetCardInfoSerializable cardInfoSerializable = (GetCardInfoSerializable) intent.getSerializableExtra("ResponseClient");
 
-        if(assortmentSerializable.getLimitType() == null){
+
+        String sumOrQuant = "";
+        String typeLimit = "";
+        if(cardInfoSerializable.getLimitType() == null){
             clientLimitDay.setText("0");
             clientLimitWeek.setText("0");
             clientLimitMonth.setText("0");
+            sumOrQuant = "Suma disponibila:";
+            typeLimit = " MDL";
         }
         else{
-            String typeLimit = "";
-            if(assortmentSerializable.getLimitType().equals("Bani"))
+            if(cardInfoSerializable.getLimitType().equals("Bani"))
                 typeLimit = " MDL";
-            else
+            else {
                 typeLimit = " L";
+                sumOrQuant = "Cantitatea disponibila:";
+            }
 
-            clientLimitDay.setText(assortmentSerializable.getLimitDay() + typeLimit);
-            clientLimitWeek.setText(assortmentSerializable.getWeeklyLimit() + typeLimit);
-            clientLimitMonth.setText(assortmentSerializable.getLimitMount() + typeLimit);
+            clientLimitDay.setText(cardInfoSerializable.getDailyLimit() + typeLimit);
+            clientLimitWeek.setText(cardInfoSerializable.getWeeklyLimit() + typeLimit);
+            clientLimitMonth.setText(cardInfoSerializable.getMonthlyLimit() + typeLimit);
         }
+        clientAmountType.setText(sumOrQuant);
+        clientCardName.setText(cardInfoSerializable.getCustomerName());
+        clientBalance.setText(cardInfoSerializable.getBalance() + " MDL");
+        clientAmount.setText(cardInfoSerializable.getAllowedBalance() + typeLimit);
 
-        clientCardName.setText(assortmentSerializable.getClientName());
-        clientBalance.setText(assortmentSerializable.getBalanta() + " MDL");
-        clientAmount.setText(assortmentSerializable.getClientAmount() + " MDL");
-
-        adapter = new AssortmentAdapter(context, R.layout.list_assortiment_view, assortmentSerializable.getAssortmentList());
+        adapter = new AssortmentCardAdapter(context, R.layout.list_assortiment_view, cardInfoSerializable.getAssortiment());
         clientProducts.setAdapter(adapter);
     }
 }

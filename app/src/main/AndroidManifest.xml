@@ -33,6 +33,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
+        <activity android:name=".ProductsWithoutIndentingActivity"/>
         <activity android:name=".ScanCardCorporativActivity">
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
@@ -72,13 +73,6 @@
             android:label="Setari"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
-        <activity
-            android:name=".MainActivity"
-            android:configChanges="orientation"
-            android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar">
-
-        </activity>
 
         <meta-data
             android:name="com.google.android.gms.vision.DEPENDENCIES"
