@@ -2,6 +2,7 @@ package md.intelectsoft.petrolmpos;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.bluetooth.BluetoothClass;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -25,7 +26,7 @@ public class BaseApp extends Application {
     private static BaseApp application;
     private static boolean isVFServiceConnected = false;
 
-    private IDeviceService deviceService;  //info about device
+    private static IDeviceService deviceService;  //info about device
 
     //service connection for verifone service
     ServiceConnection connection = new ServiceConnection() {
@@ -44,6 +45,7 @@ public class BaseApp extends Application {
             deviceService = null;
         }
     };
+
 
 
     @Override

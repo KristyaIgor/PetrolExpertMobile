@@ -160,7 +160,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
     }
 
     private void getCardInfoPEC (String cardId){
-        Call<GetCardInfo> call = peServiceAPI.getCardInfo(deviceId, cardId);
+        Call<GetCardInfo> call = peServiceAPI.getCardInfoByBarcode(deviceId, cardId);
 
         progressDialog.setMessage("Load assortment...");
         progressDialog.setCancelable(false);

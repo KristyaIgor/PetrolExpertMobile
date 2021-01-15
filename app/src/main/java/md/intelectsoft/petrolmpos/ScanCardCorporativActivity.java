@@ -14,6 +14,9 @@ import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
@@ -22,8 +25,13 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.vfi.smartpos.deviceservice.aidl.IRFCardReader;
+import com.vfi.smartpos.deviceservice.aidl.RFSearchListener;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +44,8 @@ import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCard;
 import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCardSerializable;
 import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfo;
 import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfoSerializable;
+import md.intelectsoft.petrolmpos.verifone.Utilities.DeviceHelper;
+import md.intelectsoft.petrolmpos.verifone.transaction.TransBasic;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -52,6 +62,15 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     NfcAdapter nfcAdapter;
     PendingIntent pendingIntent;
     IntentFilter writeTagFilters[];
+
+    IRFCardReader irfCardReader;
+
+    //S50卡
+    public final static int S50_CARD = 0x00;
+    //S70卡
+    public final static int S70_CARD = 0x01;
+    //CPU卡
+    public final static int CPU_CARD = 0x05;
 
     @OnClick(R.id.imageScanCameraCardCorp) void onScanCamera(){
         Intent scanIntent = new Intent(context, ScanMyDiscountActivity.class);
@@ -81,6 +100,19 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         isVerifone = BaseApp.isVFServiceConnected();
         if(isVerifone){
 
+            try {
+                irfCardReader = BaseApp.getApplication().getDeviceService().getRFCardReader();
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+
+            try {
+
+                irfCardReader.searchCard(rfSearchListener, 30);
+
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
         else{
             nfcAdapter = NfcAdapter.getDefaultAdapter(this);
@@ -110,6 +142,71 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             tagDetected.addCategory(Intent.CATEGORY_DEFAULT);
             writeTagFilters = new IntentFilter[] { tagDetected };
 
+        }
+    }
+
+    RFSearchListener rfSearchListener = new RFSearchListener.Stub() {
+        @Override
+        public void onCardPass(int cardType) throws RemoteException {
+            if (S50_CARD == cardType || S70_CARD == cardType) {
+                Log.e("TAG",  "M1 card @ " + cardType);
+                readRFData();
+            } else if (CPU_CARD == cardType) {
+                Log.e("TAG",  "CPU card");
+            }
+        }
+
+        @Override
+        public void onFail(int error, String message) throws RemoteException {
+
+            Log.i("TAG", "Check card fail+ error code:" + error + "error message :" + message);
+
+            if(error == 167){
+                Toast.makeText(context, "Timeout", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    };
+
+    public void readRFData() {
+        byte[] buffer = new byte[16];
+        int i = 0;
+
+        byte[] key = new byte[6];
+        for (i = 0; i < 6; i++)
+            key[i] = (byte) 0xFF;
+
+        try {
+            for (i = 0; i < 1; i++) {
+                int ret = irfCardReader.authBlock(i, 0, key);
+                if (ret < 0) {
+                    Log.d("TAG", "authBlock FAILS:" + ret);
+                } else {
+                    Log.d("TAG", "authBlock OK:" + ret);
+                }
+
+                ret = irfCardReader.readBlock(i, buffer);
+                if (0 == ret) {
+                    StringBuilder sb = new StringBuilder();
+                    for (byte page : buffer) {
+                        int b = page & 0xff;
+                        if (b < 0x10)
+                            sb.append("");
+                        sb.append(b);
+                    }
+                    Log.d("NFC", "Mifare Classic " + sb.toString());
+                    Log.d("TAG", "readData: success:" + toHexString(buffer) + " @ " + i);
+
+                    Message msg = new Message();
+                    msg.getData().putString("msg", sb.toString());
+                    handler.sendMessage(msg);
+
+                } else {
+                    Log.d("TAG", "readData: fail:" + ret + " @ " + i);
+                }
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
     }
 
@@ -202,6 +299,8 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
 //                    }
                         Log.d("NFC", "MifareClassic " + sb.toString());
 
+                        Log.d("NFC", "MifareClassic Reverse hex " + toHexString(mfc.readBlock(0)));
+
                         byte[] id = tagFromIntent.getId();
 
                         getCardInfoPEC(sb.toString());
@@ -221,6 +320,23 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         }else {
             Log.e("Error NFC", "Unknown intent " + intent);
         }
+    }
+
+    private String toHexString(byte[] buffer) {
+
+        String bufferString = "";
+
+        for (int i = 0; i < buffer.length; i++) {
+
+            String hexChar = Integer.toHexString(buffer[i] & 0xFF);
+            if (hexChar.length() == 1) {
+                hexChar = "0" + hexChar;
+            }
+
+            bufferString += hexChar.toUpperCase() + " ";
+        }
+
+        return bufferString;
     }
 
     @Override
@@ -250,7 +366,9 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     }
 
     private void getCardInfoPEC (String cardId){
-        Call<GetCardInfo> call = peServiceAPI.getCardInfo(deviceId, cardId);
+
+
+        Call<GetCardInfo> call = peServiceAPI.getCardInfoByBarcode(deviceId, getMD5HashCardCode(cardId));
 
         progressDialog.setMessage("Load assortment...");
         progressDialog.setCancelable(false);
@@ -376,6 +494,35 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         });
     }
 
+    public static String getMD5HashCardCode(String message) {
+        MessageDigest m = null;
+        try {
+            m = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        m.reset();
+        m.update(message.getBytes());
+        byte[] digest = m.digest();
+        BigInteger bigInt = new BigInteger(1,digest);
+        String hashtext = bigInt.toString(16);
+// Now we need to zero pad it if you actually want the full 32 chars.
+        while(hashtext.length() < 32 ){
+            hashtext = "0"+hashtext;
+        }
+        return hashtext;
+    }
+
+    Handler handler = new Handler() {
+        @SuppressLint("HandlerLeak")
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            Log.d("TAG", msg.getData().getString("msg"));
+            getCardInfoPEC(msg.getData().getString("msg"));
+        }
+    };
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -384,4 +531,6 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                 startActivityForResult(new Intent(context, ScannedBarcodeActivity.class), 121);
         }
     }
+
+
 }
