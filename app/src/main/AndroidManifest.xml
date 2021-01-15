@@ -33,7 +33,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".ProductsWithoutIndentingActivity"/>
+        <activity android:name=".CountProductWithoutActivity"></activity>
+        <activity android:name=".ProductsWithoutIndentingActivity" />
         <activity android:name=".ScanCardCorporativActivity">
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />

@@ -17,6 +17,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.adapters.AssortmentAdapter;
+import md.intelectsoft.petrolmpos.models.ToggleButton;
 import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 
 @SuppressLint("NonConstantResourceId")
@@ -29,11 +30,18 @@ public class ProductsWithoutIndentingActivity extends AppCompatActivity {
     List<AssortmentSerializable> products;
     AssortmentAdapter adapter;
 
+    AssortmentSerializable productSelected;
+
     @OnClick(R.id.imageBackToMainFromProducts) void onCloseActivity (){
         finish();
     }
-    @OnClick(R.id.continueSales) void onContinue (){
 
+    @OnClick(R.id.continueSales) void onContinue (){
+        if(productSelected != null){
+            Intent count = new Intent(context, CountProductWithoutActivity.class);
+            count.putExtra("Product", productSelected);
+            startActivityForResult(count,154);
+        }
     }
 
 
@@ -54,7 +62,7 @@ public class ProductsWithoutIndentingActivity extends AppCompatActivity {
         listProducts.setAdapter(adapter);
 
         listProducts.setOnItemClickListener((parent, view, position, id) -> {
-            AssortmentSerializable item = adapter.getItem(position);
+            productSelected = adapter.getItem(position);
             listProducts.setItemChecked(position, true);
             continueSales.setVisibility(View.VISIBLE);
         });

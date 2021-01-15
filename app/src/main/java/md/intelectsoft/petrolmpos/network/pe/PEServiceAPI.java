@@ -21,6 +21,9 @@ public interface PEServiceAPI {
     @GET("json/GetCardInfo")
     Call<GetCardInfo> getCardInfo (@Query("StationID") String deviceId, @Query("CardID") String cardId);
 
+    @GET("json/GetCardInfoByBarcode")
+    Call<GetCardInfo> getCardInfoByBarcode (@Query("StationID") String deviceId, @Query("Barcode") String barcode);
+
     @GET("json/CreateBill")
     Call<SimpleResponse> createBill (@Query("deviceId") String deviceId, @Query("CardID") String cardId,
                               @Query("PriceLine") String priceLineId, @Query("Price") double price,
