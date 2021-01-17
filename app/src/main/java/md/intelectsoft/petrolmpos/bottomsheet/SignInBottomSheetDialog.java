@@ -1,6 +1,7 @@
 package md.intelectsoft.petrolmpos.bottomsheet;
 
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.CompoundButton;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -28,6 +30,7 @@ import java.util.List;
 import md.intelectsoft.petrolmpos.CountProductWithoutActivity;
 import md.intelectsoft.petrolmpos.R;
 import md.intelectsoft.petrolmpos.adapters.PaymentWithoutAdapter;
+import md.intelectsoft.petrolmpos.paymentactivity.BPayPaymentActivity;
 
 
 /**
@@ -41,6 +44,7 @@ public class SignInBottomSheetDialog extends BottomSheetDialogFragment {
 
     static Dialog dialog;
     static View bottomSheet;
+    PaymentWithoutAdapter adapter;
 
     public static final String TAG = "ActionBottomDialog";
 
@@ -58,12 +62,48 @@ public class SignInBottomSheetDialog extends BottomSheetDialogFragment {
 
 
         List<String> list = new ArrayList<>();
-        for(int i = 0; i < 5; i++){
+        for(int i = 0; i < 25; i++){
             list.add("Item " + i);
         }
 
-        PaymentWithoutAdapter adapter = new PaymentWithoutAdapter(getContext(), R.layout.list_item_payment_type, list);
+        adapter = new PaymentWithoutAdapter(getContext(), R.layout.list_item_payment_type, list);
         grid.setAdapter(adapter);
+
+        grid.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                switch(scrollState) {
+                    case 2: // SCROLL_STATE_FLING
+                        close.setVisibility(View.GONE);
+                        break;
+
+                    case 1: // SCROLL_STATE_TOUCH_SCROLL
+                        close.setVisibility(View.GONE);
+                        break;
+
+                    case 0: // SCROLL_STATE_IDLE
+                        close.setVisibility(View.VISIBLE);
+                        break;
+
+                    default:
+                        close.setVisibility(View.VISIBLE);
+                        break;
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+
+            }
+        });
+
+        grid.setOnItemClickListener((parent, view, position, id) ->{
+            String test = adapter.getItem(position);
+            if(test.equals("Item 2")){
+                //QIWI cred ca
+                startActivity(new Intent(getContext(), BPayPaymentActivity.class));
+            }
+        });
 
         close.setOnClickListener(v -> dialog.dismiss());
 
