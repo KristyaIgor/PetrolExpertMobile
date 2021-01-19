@@ -18,6 +18,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.NFC" />
 
+    <uses-permission android:name="android.permission.BEEPER"/>
+    <uses-permission android:name="android.permission.LED"/>
+    <uses-permission android:name="android.permission.PRINTER"/>
+
     <uses-feature
         android:name="android.hardware.nfc"
         android:required="true" />
@@ -33,13 +37,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true">
-        <activity android:name=".paymentactivity.BPayPaymentActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+        <activity android:name=".paymentactivity.QiwiPaymentActivity"/>
+        <activity android:name=".paymentactivity.BPayPaymentActivity"/>
         <activity android:name=".CountProductWithoutActivity" />
         <activity android:name=".ProductsWithoutIndentingActivity" />
         <activity android:name=".ScanCardCorporativActivity">
@@ -63,7 +63,7 @@
         <activity android:name=".ClientMyDiscountCardCorporativActivity" />
         <activity android:name=".ScanMyDiscountActivity" />
         <activity android:name=".InfoActivity" />
-        <activity android:name=".TestActivity" />
+        <activity android:name=".MainActivity" />
         <activity android:name=".SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

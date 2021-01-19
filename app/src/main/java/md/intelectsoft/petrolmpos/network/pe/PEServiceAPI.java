@@ -1,10 +1,13 @@
 package md.intelectsoft.petrolmpos.network.pe;
 
+import md.intelectsoft.petrolmpos.network.pe.body.SetFiscalBody;
 import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
 import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfo;
 import md.intelectsoft.petrolmpos.network.pe.result.RegisterDevice;
+import md.intelectsoft.petrolmpos.network.pe.result.SetFiscal;
 import md.intelectsoft.petrolmpos.network.pe.result.SimpleResponse;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
@@ -18,9 +21,6 @@ public interface PEServiceAPI {
     @GET("json/GetAsortment")
     Call<GetAssortment> getAssortment (@Query("StationID") String deviceId);
 
-    @GET("json/GetCardInfo")
-    Call<GetCardInfo> getCardInfo (@Query("StationID") String deviceId, @Query("CardID") String cardId);
-
     @GET("json/GetCardInfoByBarcode")
     Call<GetCardInfo> getCardInfoByBarcode (@Query("StationID") String deviceId, @Query("Barcode") String barcode);
 
@@ -32,4 +32,9 @@ public interface PEServiceAPI {
 
     @GET("json/PrintXReport")
     Call<SimpleResponse> printX (@Query("deviceId") String deviceId);
+
+    @GET("json/SetAsFiscal")
+    Call<SetFiscal> setAsFiscal (@Body SetFiscalBody licenseData);
+
+
 }

@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
@@ -24,6 +25,8 @@ public class InfoActivity extends AppCompatActivity {
     @BindView(R.id.textUserName) TextView userName;
     @BindView(R.id.textCashWorkPlace) TextView cashWorkPlace;
     @BindView(R.id.textIDNO) TextView companyIdno;
+    @BindView(R.id.imgButtonsSetFiscal) ImageButton setAsFiscal;
+    @BindView(R.id.textFicsalCode) TextView fiscalCode;
 
     @BindView(R.id.langEnButton) RadioButton langEN;
     @BindView(R.id.langRoButton) RadioButton langRO;
@@ -32,7 +35,6 @@ public class InfoActivity extends AppCompatActivity {
     @OnClick(R.id.imageBackToMain) void onBack(){
         finish();
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +96,10 @@ public class InfoActivity extends AppCompatActivity {
                 langRO.setChecked(false);
                 LocaleHelper.setLocale(this, "ru");
             }
+        });
+
+        setAsFiscal.setOnClickListener(v -> {
+
         });
     }
 

@@ -3,6 +3,7 @@ package md.intelectsoft.petrolmpos.paymentactivity;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.res.ResourcesCompat;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -24,21 +25,31 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.R;
 
 import static android.graphics.Color.BLACK;
 import static android.graphics.Color.WHITE;
-
+@SuppressLint("NonConstantResourceId")
 public class BPayPaymentActivity extends AppCompatActivity {
-    ImageView imageView;
+    @BindView(R.id.imageForBPayQR)  ImageView qrCode;
+
+    @OnClick(R.id.layoutCloseBPayActivity) void onCancel(){
+        finish();
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_b_pay_payment);
 
-        imageView = findViewById(R.id.imageView6);
+        ButterKnife.bind(this);
+        ButterKnife.setDebug(true);
 
-        imageView.setImageBitmap(createQRGradientImage("11f47ad5-7b73-42c0-abae-878b1e16adee", 200, 300));
+        qrCode.setImageBitmap(createQRGradientImage("11f47ad5-7b73-42c0-abae-878b1e16adee", 200, 300));
     }
 
 
@@ -54,19 +65,6 @@ public class BPayPaymentActivity extends AppCompatActivity {
             // Image data conversion, using matrix conversion
             BitMatrix bitMatrix = new QRCodeWriter().encode(url, BarcodeFormat.QR_CODE, width, height, hints);
             int[] pixels = new int[width * height];
-
-        /*
-Ordinary two-dimensional code drawing
-        for (int y = 0; y < height; y++){
-            for (int x = 0; x < width; x++){
-                if (bitMatrix.get(x, y)){
-                    pixels[y * width + x] = 0xff000000;
-                } else {
-                    pixels[y * width + x] = 0xffffffff;
-                }
-            }
-        }
-         */
 
             // Gradient color draw from top to bottom
             for (int y = 0; y < height; y++){
@@ -94,62 +92,5 @@ Ordinary two-dimensional code drawing
             e.printStackTrace();
         }
         return null;
-    }
-
-    private Bitmap encodeAsBitmap(String contents,
-                BarcodeFormat format,
-        int desiredWidth,
-        int desiredHeight) throws WriterException {
-            Hashtable<EncodeHintType,Object> hints = null;
-            String encoding = guessAppropriateEncoding(contents);
-            if (encoding != null) {
-                hints = new Hashtable<EncodeHintType,Object>(2);
-                hints.put(EncodeHintType.CHARACTER_SET, encoding);
-            }
-            MultiFormatWriter writer = new MultiFormatWriter();
-            BitMatrix result = writer.encode(contents, format, desiredWidth, desiredHeight, hints);
-            int width = result.getWidth();
-            int height = result.getHeight();
-            int[] pixels = new int[width * height];
-            // All are 0, or black, by default
-            for (int y = 0; y < height; y++) {
-                int offset = y * width;
-                for (int x = 0; x < width; x++) {
-                    pixels[offset + x] = result.get(x, y) ? BLACK : WHITE;
-                }
-            }
-
-            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
-            return bitmap;
-        }
-
-    private static String guessAppropriateEncoding(CharSequence contents) {
-        // Very crude at the moment
-        for (int i = 0; i < contents.length(); i++) {
-            if (contents.charAt(i) > 0xFF) {
-                return "UTF-8";
-            }
-        }
-        return null;
-    }
-
-    public Bitmap mergeBitmaps(Bitmap overlay, Bitmap bitmap) {
-
-        int height = bitmap.getHeight();
-        int width = bitmap.getWidth();
-
-        Bitmap combined = Bitmap.createBitmap(width, height, bitmap.getConfig());
-        Canvas canvas = new Canvas(combined);
-        int canvasWidth = canvas.getWidth();
-        int canvasHeight = canvas.getHeight();
-
-        canvas.drawBitmap(bitmap, new Matrix(), null);
-
-        int centreX = (canvasWidth  - overlay.getWidth()) /2;
-        int centreY = (canvasHeight - overlay.getHeight()) /2 ;
-        canvas.drawBitmap(overlay, centreX, centreY, null);
-
-        return combined;
     }
 }

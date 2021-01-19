@@ -1,7 +1,6 @@
 package md.intelectsoft.petrolmpos;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
@@ -17,10 +16,6 @@ import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -208,7 +203,7 @@ public class AuthorizeActivity extends AppCompatActivity {
                             SPFHelp.getInstance().putLong("DateReceiveURI", nowDate);
                             SPFHelp.getInstance().putLong("ServerDateTime", serverDate);
 
-                            startActivity(new Intent(context, TestActivity.class));
+                            startActivity(new Intent(context, MainActivity.class));
                             finish();
                         }
                         else{

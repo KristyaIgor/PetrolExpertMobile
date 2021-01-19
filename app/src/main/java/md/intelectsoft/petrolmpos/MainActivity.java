@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,12 +62,13 @@ import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
 import md.intelectsoft.petrolmpos.network.pe.result.RegisterDevice;
 import md.intelectsoft.petrolmpos.network.pe.result.SimpleResponse;
+import md.intelectsoft.petrolmpos.printeractivity.PrinterFonts;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 @SuppressLint("NonConstantResourceId")
-public class TestActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
     @BindView(R.id.layoutApplyCard) ConstraintLayout layoutApplyCard;
     @BindView(R.id.textTerminalNumber) TextView terminalNumber;
     @BindView(R.id.textOperatorName) TextView terminalUser;
@@ -89,7 +89,7 @@ public class TestActivity extends AppCompatActivity {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
             startActivityForResult(new Intent(context, ScanMyDiscountActivity.class), 122);
         else
-            ActivityCompat.requestPermissions(TestActivity.this, new String[]{Manifest.permission.CAMERA}, 221);
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, 221);
     }
 
     @OnClick(R.id.buttonScanWithoutIdentify) void onScanWithoutIdentify(){
@@ -220,6 +220,10 @@ public class TestActivity extends AppCompatActivity {
         }
 
         getURI(licenseId);
+
+        if(BaseApp.isVFServiceConnected())
+            PrinterFonts.initialize(this.getAssets());
+
     }
 
     @Override
@@ -298,15 +302,15 @@ public class TestActivity extends AppCompatActivity {
                 progressDialog.dismiss();
                 SimpleResponse device = response.body();
                 if(device != null)
-                    if(device.getNoError()) Toast.makeText(TestActivity.this, "X report printed!", Toast.LENGTH_SHORT).show();
-                    else Toast.makeText(TestActivity.this, "X report not printed! Message: " + device.getErrorMessage(), Toast.LENGTH_SHORT).show();
-                else Toast.makeText(TestActivity.this, "X report not printed! Not response!", Toast.LENGTH_SHORT).show();
+                    if(device.getNoError()) Toast.makeText(MainActivity.this, "X report printed!", Toast.LENGTH_SHORT).show();
+                    else Toast.makeText(MainActivity.this, "X report not printed! Message: " + device.getErrorMessage(), Toast.LENGTH_SHORT).show();
+                else Toast.makeText(MainActivity.this, "X report not printed! Not response!", Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onFailure(Call<SimpleResponse> call, Throwable t) {
                 progressDialog.dismiss();
-                Toast.makeText(TestActivity.this, "X report not printed! Message: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "X report not printed! Message: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
