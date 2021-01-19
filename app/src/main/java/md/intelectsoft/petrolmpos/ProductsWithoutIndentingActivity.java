@@ -24,7 +24,6 @@ import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 @SuppressLint("NonConstantResourceId")
 public class ProductsWithoutIndentingActivity extends AppCompatActivity {
 
-    @BindView(R.id.continueSales) Button continueSales;
     @BindView(R.id.listProductsWithoutIndenting) ListView listProducts;
 
     Context context;
@@ -35,14 +34,6 @@ public class ProductsWithoutIndentingActivity extends AppCompatActivity {
 
     @OnClick(R.id.imageBackToMainFromProducts) void onCloseActivity (){
         finish();
-    }
-
-    @OnClick(R.id.continueSales) void onContinue (){
-        if(productSelected != null){
-            Intent count = new Intent(context, CountProductWithoutActivity.class);
-            count.putExtra("Product", productSelected);
-            startActivityForResult(count,154);
-        }
     }
 
 
@@ -64,8 +55,10 @@ public class ProductsWithoutIndentingActivity extends AppCompatActivity {
 
         listProducts.setOnItemClickListener((parent, view, position, id) -> {
             productSelected = adapter.getItem(position);
-            listProducts.setItemChecked(position, true);
-            continueSales.setVisibility(View.VISIBLE);
+            Intent count = new Intent(context, CountProductWithoutActivity.class);
+            count.putExtra("Identify", false);
+            count.putExtra("Product", productSelected);
+            startActivityForResult(count,154);
         });
 
     }

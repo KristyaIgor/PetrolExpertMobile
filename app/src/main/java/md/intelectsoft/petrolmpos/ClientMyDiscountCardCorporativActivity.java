@@ -13,6 +13,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.adapters.AssortmentCardAdapter;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentCardSerializable;
+import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfoSerializable;
 
 @SuppressLint("NonConstantResourceId")
@@ -77,5 +79,13 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
 
         adapter = new AssortmentCardAdapter(context, R.layout.list_assortiment_view, cardInfoSerializable.getAssortiment());
         clientProducts.setAdapter(adapter);
+
+        clientProducts.setOnItemClickListener((parent, view, position, id) -> {
+            AssortmentCardSerializable item = adapter.getItem(position);
+            Intent count = new Intent(context, CountProductWithoutActivity.class);
+            count.putExtra("Identify", true);
+            count.putExtra("Product", item);
+            startActivityForResult(count,164);
+        });
     }
 }

@@ -8,7 +8,7 @@
     tools:context=".paymentactivity.BPayPaymentActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/layoutCloseScanActivity"
+        android:id="@+id/layoutCloseBPayActivity"
         android:layout_width="65dp"
         android:layout_height="65dp"
         android:layout_marginBottom="24dp"
@@ -29,11 +29,11 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ImageView
-        android:id="@+id/imageView6"
+        android:id="@+id/imageForBPayQR"
         android:layout_width="0dp"
         android:layout_height="400dp"
         android:scaleType="centerCrop"
-        app:layout_constraintBottom_toTopOf="@+id/layoutCloseScanActivity"
+        app:layout_constraintBottom_toTopOf="@+id/layoutCloseBPayActivity"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView40"

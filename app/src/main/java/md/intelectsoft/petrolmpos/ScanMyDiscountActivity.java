@@ -117,7 +117,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
             bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
 
             try {
-                iScanner.startScan(bundle, 60, new ScannerListener.Stub() {
+                iScanner.startScan(bundle, 40, new ScannerListener.Stub() {
                     @Override
                     public void onSuccess(String barcode) throws RemoteException {
 

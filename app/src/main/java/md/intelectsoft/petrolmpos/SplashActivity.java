@@ -30,7 +30,7 @@ public class SplashActivity extends AppCompatActivity {
                 if(licenseID == null)
                     startActivity(new Intent(SplashActivity.this, AuthorizeActivity.class));
                 else
-                    startActivity(new Intent(SplashActivity.this, TestActivity.class));
+                    startActivity(new Intent(SplashActivity.this, MainActivity.class));
 
                 finish();
             }

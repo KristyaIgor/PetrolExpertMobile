@@ -1,7 +1,6 @@
 package md.intelectsoft.petrolmpos.verifone.transaction;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -9,7 +8,6 @@ import android.util.Log;
 
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 
-import md.intelectsoft.petrolmpos.TestActivity;
 import md.intelectsoft.petrolmpos.verifone.Utilities.Utility;
 import md.intelectsoft.petrolmpos.verifone.basic.HostInformation;
 import md.intelectsoft.petrolmpos.verifone.basic.ISO8583;
@@ -88,9 +86,9 @@ public class TransPrinter extends PrinterCanvas {
 
         super.print(printerListener);
 
-        Intent intent = new Intent(context, TestActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
+//        Intent intent = new Intent(context, PrinterExActivity.class);
+//        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        context.startActivity(intent);
 
     }
 
