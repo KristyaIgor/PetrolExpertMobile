@@ -11,11 +11,21 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.vfi.smartpos.deviceservice.aidl.IDeviceService;
 
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
+import io.realm.Realm;
+import io.realm.RealmConfiguration;
+import md.intelectsoft.petrolmpos.Utils.SPFHelp;
+import md.intelectsoft.petrolmpos.realm.RealmMigrations;
 import md.intelectsoft.petrolmpos.verifone.Utilities.DeviceHelper;
 import md.intelectsoft.petrolmpos.verifone.Utilities.ToastUtil;
 import md.intelectsoft.petrolmpos.verifone.transaction.AppParams;
@@ -25,8 +35,11 @@ public class BaseApp extends Application {
     private static final String TAG = "PetrolMPOS_BaseApp";
     private static BaseApp application;
     private static boolean isVFServiceConnected = false;
-
+    private static boolean deviceIsFiscal = false;
     private static IDeviceService deviceService;  //info about device
+
+    private String word;
+
 
     //service connection for verifone service
     ServiceConnection connection = new ServiceConnection() {
@@ -46,14 +59,51 @@ public class BaseApp extends Application {
         }
     };
 
-
-
     @Override
     public void onCreate() {
         super.onCreate();
         bindDeviceService();
         application = this;
         ToastUtil.init(getApplicationContext());
+
+        Realm.init(this);
+
+        RealmConfiguration configuration = new RealmConfiguration.Builder().name("mpos.realm").schemaVersion(2).migration(new RealmMigrations()).build();
+        Realm.setDefaultConfiguration(configuration);
+        Realm.getInstance(configuration);
+
+
+        word = SPFHelp.getInstance().getString("WordTime", null);
+
+        if(word == null) {
+            KeyGenerator keyGenerator;
+            SecretKey myWord;
+            try {
+                keyGenerator = KeyGenerator.getInstance("AES");
+                keyGenerator.init(256);
+                myWord = keyGenerator.generateKey();
+
+                word = funEncodeWord(myWord.getEncoded());
+
+                SPFHelp.getInstance().putString("WordTime" , word);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private String funEncodeWord (byte[] enVal) {
+        String conVal= Base64.encodeToString(enVal,Base64.DEFAULT);
+        return conVal;
+    }
+    private byte[] funDecodeWord (String decVal) {
+        byte[] conVal = Base64.decode(decVal,Base64.DEFAULT);
+        return conVal;
+
+    }
+
+    public byte[] getWordTime() {
+        return funDecodeWord(word);
     }
 
     public static BaseApp getApplication() {
@@ -102,5 +152,13 @@ public class BaseApp extends Application {
 
     public IDeviceService getDeviceService() {
         return deviceService;
+    }
+
+    public static boolean deviceIsFiscal() {
+        return deviceIsFiscal;
+    }
+
+    public static void setDeviceIsFiscal(boolean deviceIsFiscal) {
+        BaseApp.deviceIsFiscal = deviceIsFiscal;
     }
 }

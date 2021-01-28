@@ -1,20 +1,21 @@
-package md.intelectsoft.petrolmpos.network.pe.result;
+package md.intelectsoft.petrolmpos.network.pe.result.authorizeUser;
 
-import java.util.List;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class GetAssortment {
-
+public class GetAuthorizeUser {
     @SerializedName("ErrorCode")
     @Expose
     private Integer errorCode;
     @SerializedName("ErrorMessage")
     @Expose
     private String errorMessage;
-    @SerializedName("Assortment")
+    @SerializedName("Token")
     @Expose
-    private List<Assortment> assortment = null;
+    private TokenUser token;
+    @SerializedName("User")
+    @Expose
+    private UserAuth user;
 
     public Integer getErrorCode() {
         return errorCode;
@@ -32,11 +33,19 @@ public class GetAssortment {
         this.errorMessage = errorMessage;
     }
 
-    public List<Assortment> getAssortment() {
-        return assortment;
+    public TokenUser getToken() {
+        return token;
     }
 
-    public void setAssortment(List<Assortment> assortment) {
-        this.assortment = assortment;
+    public void setToken(TokenUser token) {
+        this.token = token;
+    }
+
+    public UserAuth getUser() {
+        return user;
+    }
+
+    public void setUser(UserAuth user) {
+        this.user = user;
     }
 }

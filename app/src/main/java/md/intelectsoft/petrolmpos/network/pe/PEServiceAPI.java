@@ -1,14 +1,18 @@
 package md.intelectsoft.petrolmpos.network.pe;
 
-import md.intelectsoft.petrolmpos.network.pe.body.SetFiscalBody;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
+import md.intelectsoft.petrolmpos.network.pe.body.registerBill.BillRegistered;
 import md.intelectsoft.petrolmpos.network.pe.result.GetCardInfo;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCashList;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCurrentShift;
+import md.intelectsoft.petrolmpos.network.pe.result.RegisterBillResponse;
 import md.intelectsoft.petrolmpos.network.pe.result.RegisterDevice;
-import md.intelectsoft.petrolmpos.network.pe.result.SetFiscal;
 import md.intelectsoft.petrolmpos.network.pe.result.SimpleResponse;
+import md.intelectsoft.petrolmpos.network.pe.result.authorizeUser.GetAuthorizeUser;
+import md.intelectsoft.petrolmpos.network.pe.result.stationSettings.GetStationSettings;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface PEServiceAPI {
@@ -16,25 +20,27 @@ public interface PEServiceAPI {
     Call<Boolean> ping ();
 
     @GET("json/RegisterDevice")
-    Call<RegisterDevice> registerDevice (@Query("StationID") String deviceId, @Query("Name") String name);
-
-    @GET("json/GetAsortment")
-    Call<GetAssortment> getAssortment (@Query("StationID") String deviceId);
+    Call<RegisterDevice> registerDevice (@Query("StationID") String deviceId, @Query("Name") String name, @Query("CashID") String cashId, @Query("tokenID") String tokenUid);
 
     @GET("json/GetCardInfoByBarcode")
     Call<GetCardInfo> getCardInfoByBarcode (@Query("StationID") String deviceId, @Query("Barcode") String barcode);
 
-    @GET("json/CreateBill")
-    Call<SimpleResponse> createBill (@Query("deviceId") String deviceId, @Query("CardID") String cardId,
-                              @Query("PriceLine") String priceLineId, @Query("Price") double price,
-                              @Query("Count") String count,
-                              @Query("Latitude") String lat, @Query("Longitude") String lon);
+    @POST("json/RegisterBill")
+    Call<RegisterBillResponse> registerBill (@Body BillRegistered bill);
 
     @GET("json/PrintXReport")
     Call<SimpleResponse> printX (@Query("deviceId") String deviceId);
 
-    @GET("json/SetAsFiscal")
-    Call<SetFiscal> setAsFiscal (@Body SetFiscalBody licenseData);
+    @GET("json/AuthorizeUser")
+    Call<GetAuthorizeUser> authorizeUser (@Query("userName") String userName);
 
+    @GET("json/GetCashList")
+    Call<GetCashList> getCashList (@Query("tokenUid") String userCode);
+
+    @GET("json/GetStationSettings")
+    Call<GetStationSettings> getStationSettings (@Query("StationID") String deviceId);
+
+    @GET("json/GetCurrentShift")
+    Call<GetCurrentShift> getCurrentShift (@Query("StationID") String deviceId);
 
 }

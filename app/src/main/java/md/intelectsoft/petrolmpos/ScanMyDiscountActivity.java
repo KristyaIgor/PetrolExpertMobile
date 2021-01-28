@@ -230,6 +230,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
                             Intent intent = new Intent(ScanMyDiscountActivity.this, ClientMyDiscountCardCorporativActivity.class);
                             intent.putExtra("ResponseClient", cardInfoSerializable);
+                            intent.putExtra("ClientCardCode", cardId);
                             startActivity(intent);
                             progressDialog.dismiss();
                             finish();

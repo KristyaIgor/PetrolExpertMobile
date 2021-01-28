@@ -14,11 +14,13 @@ import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.Log;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -35,6 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
@@ -52,6 +55,7 @@ import retrofit2.Response;
 
 @SuppressLint("NonConstantResourceId")
 public class ScanCardCorporativActivity extends AppCompatActivity {
+    @BindView(R.id.progressBarTimeScanCard) ProgressBar progressBarScanCard;
 
     ProgressDialog progressDialog;
     PEServiceAPI peServiceAPI;
@@ -71,6 +75,8 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     public final static int S70_CARD = 0x01;
     //CPU卡
     public final static int CPU_CARD = 0x05;
+
+    int interval = 30;
 
     @OnClick(R.id.imageScanCameraCardCorp) void onScanCamera(){
         Intent scanIntent = new Intent(context, ScanMyDiscountActivity.class);
@@ -109,6 +115,17 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             try {
 
                 irfCardReader.searchCard(rfSearchListener, 30);
+                progressBarScanCard.setMax(30000);
+                new CountDownTimer(30000, 1) {
+
+                    public void onTick(long millisUntilFinished) {
+                        progressBarScanCard.setProgress((int)millisUntilFinished);
+                    }
+
+                    public void onFinish() {
+
+                    }
+                }.start();
 
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -162,7 +179,6 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             Log.i("TAG", "Check card fail+ error code:" + error + "error message :" + message);
 
             if(error == 167){
-                Toast.makeText(context, "Timeout", Toast.LENGTH_SHORT).show();
                 finish();
             }
         }
@@ -438,6 +454,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
 
                             Intent intent = new Intent(context, ClientMyDiscountCardCorporativActivity.class);
                             intent.putExtra("ResponseClient", cardInfoSerializable);
+                            intent.putExtra("ClientCardCode", getMD5HashCardCode(cardId));
                             startActivity(intent);
                             progressDialog.dismiss();
                             finish();
