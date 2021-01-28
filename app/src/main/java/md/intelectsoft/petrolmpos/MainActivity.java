@@ -1,11 +1,5 @@
 package md.intelectsoft.petrolmpos;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.ActivityCompat;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
@@ -21,6 +15,12 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
@@ -49,6 +49,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
+import md.intelectsoft.petrolmpos.enums.ShiftStateEnum;
 import md.intelectsoft.petrolmpos.network.broker.Body.SendGetURI;
 import md.intelectsoft.petrolmpos.network.broker.BrokerRetrofitClient;
 import md.intelectsoft.petrolmpos.network.broker.BrokerServiceAPI;
@@ -57,11 +58,14 @@ import md.intelectsoft.petrolmpos.network.broker.Results.AppDataRegisterApplicat
 import md.intelectsoft.petrolmpos.network.broker.Results.RegisterApplication;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
-import md.intelectsoft.petrolmpos.network.pe.result.Assortment;
 import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
-import md.intelectsoft.petrolmpos.network.pe.result.GetAssortment;
+import md.intelectsoft.petrolmpos.network.pe.result.GetCurrentShift;
 import md.intelectsoft.petrolmpos.network.pe.result.RegisterDevice;
 import md.intelectsoft.petrolmpos.network.pe.result.SimpleResponse;
+import md.intelectsoft.petrolmpos.network.pe.result.authorizeUser.GetAuthorizeUser;
+import md.intelectsoft.petrolmpos.network.pe.result.authorizeUser.UserAuth;
+import md.intelectsoft.petrolmpos.network.pe.result.stationSettings.AssortmentStation;
+import md.intelectsoft.petrolmpos.network.pe.result.stationSettings.GetStationSettings;
 import md.intelectsoft.petrolmpos.printeractivity.PrinterFonts;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -93,7 +97,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.buttonScanWithoutIdentify) void onScanWithoutIdentify(){
-        Call<GetAssortment> getAssortmentCall = peServiceAPI.getAssortment(deviceId);
+        Call<GetStationSettings> getAssortmentCall = peServiceAPI.getStationSettings(deviceId);
         progressDialog.setMessage("Load available products...");
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
@@ -107,10 +111,10 @@ public class MainActivity extends AppCompatActivity {
         });
         progressDialog.show();
 
-        getAssortmentCall.enqueue(new Callback<GetAssortment>() {
+        getAssortmentCall.enqueue(new Callback<GetStationSettings>() {
             @Override
-            public void onResponse(Call<GetAssortment> call, Response<GetAssortment> response) {
-                GetAssortment getAssortment = response.body();
+            public void onResponse(Call<GetStationSettings> call, Response<GetStationSettings> response) {
+                GetStationSettings getAssortment = response.body();
 
                 if(getAssortment != null){
                     if(getAssortment.getErrorCode() == 0){
@@ -118,8 +122,9 @@ public class MainActivity extends AppCompatActivity {
 
                             List<AssortmentSerializable> listOfProducts = new ArrayList<>();
 
-                            for(Assortment item: getAssortment.getAssortment()){
-                                AssortmentSerializable product = new AssortmentSerializable(item.getAssortimentID(),
+                            for(AssortmentStation item: getAssortment.getAssortment()){
+                                AssortmentSerializable product = new AssortmentSerializable(
+                                        item.getAssortimentID(),
                                         item.getAssortmentCode(),
                                         item.getDiscount(),
                                         item.getName(),
@@ -168,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<GetAssortment> call, Throwable t) {
+            public void onFailure(Call<GetStationSettings> call, Throwable t) {
                 progressDialog.dismiss();
                 new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                         .setTitle("Attention!")
@@ -214,16 +219,116 @@ public class MainActivity extends AppCompatActivity {
         String uri = SPFHelp.getInstance().getString("URI", null);
         String licenseId = SPFHelp.getInstance().getString("LicenseID", null);
 
-        if(uri != null) {
-            peServiceAPI = PERetrofitClient.getPEService(uri);
-            registerDevice();
-        }
+        peServiceAPI = PERetrofitClient.getPEService(uri);
 
         getURI(licenseId);
+        long tokenValidate = SPFHelp.getInstance().getLong("TokenValid", 0);
+        long dateNow = new Date().getTime();
+        if(tokenValidate < dateNow) authorizeUser(SPFHelp.getInstance().getString("UserCodeAuth", ""));
+        else registerDevice();
+
+        getShiftInfo();
+
+        terminalUser.setText(SPFHelp.getInstance().getString("Owner",""));
+        terminalNumber.setText("Nr: " + SPFHelp.getInstance().getInt("RegisteredNumber",0));
 
         if(BaseApp.isVFServiceConnected())
             PrinterFonts.initialize(this.getAssets());
 
+    }
+
+    private void authorizeUser(String code) {
+        Call<GetAuthorizeUser> call = peServiceAPI.authorizeUser(code);
+
+        progressDialog.setMessage("Refresh token...");
+        progressDialog.setCancelable(false);
+        progressDialog.setIndeterminate(true);
+        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                call.cancel();
+                if(call.isCanceled())
+                    finish();
+            }
+        });
+        progressDialog.show();
+
+        call.enqueue(new Callback<GetAuthorizeUser>() {
+            @Override
+            public void onResponse(Call<GetAuthorizeUser> call, Response<GetAuthorizeUser> response) {
+                GetAuthorizeUser getAuthorizeUser = response.body();
+                progressDialog.dismiss();
+                if(getAuthorizeUser != null){
+                    if(getAuthorizeUser.getErrorCode() == 0){
+                        String tokenUser = getAuthorizeUser.getToken().getUid();
+                        String tokenValid = getAuthorizeUser.getToken().getValidTo();
+                        if (tokenValid != null) {
+                            if (tokenValid != null)
+                                tokenValid = tokenValid.replace("/Date(", "");
+                            if (tokenValid != null)
+                                tokenValid = tokenValid.substring(0, tokenValid.length() - 7);
+                        }
+
+                        long timeValid = Long.parseLong(tokenValid);
+                        SPFHelp.getInstance().putLong("TokenValid", timeValid);
+                        SPFHelp.getInstance().putString("TokenId", tokenUser);
+
+                        registerDevice();
+                    }
+                    else
+                        showErrorDialogAuthUser("Error auth user!Message: " + getAuthorizeUser.getErrorMessage());
+                }
+                else showErrorDialogAuthUser("Error auth user! Response is empty!");
+            }
+
+            @Override
+            public void onFailure(Call<GetAuthorizeUser> call, Throwable t) {
+                progressDialog.dismiss();
+                showErrorDialogAuthUser("Error auth user!Message: " + t.getMessage());
+            }
+        });
+    }
+
+    private void showErrorDialogAuthUser (String text) {
+        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setTitle("Attention!")
+                .setMessage(text)
+                .setCancelable(false)
+                .setPositiveButton("OK", (dialogInterface, i) -> {
+
+                })
+                .show();
+    }
+
+    private void getShiftInfo() {
+        Call<GetCurrentShift> call = peServiceAPI.getCurrentShift(deviceId);
+
+        call.enqueue(new Callback<GetCurrentShift>() {
+            @Override
+            public void onResponse(Call<GetCurrentShift> call, Response<GetCurrentShift> response) {
+                GetCurrentShift getCurrentShift = response.body();
+                if(getCurrentShift != null){
+                    if(getCurrentShift.getErrorCode() == 0){
+                        if(getCurrentShift.getShiftState() != ShiftStateEnum.Valid){
+                            if(getCurrentShift.getShiftState() == ShiftStateEnum.Closed){
+                                showErrorDialogShiftState("Shift is closed! You can't work! Open shift first.");
+                            }
+                            else if(getCurrentShift.getShiftState() == ShiftStateEnum.Elapsed){
+                                showErrorDialogShiftState("Shift elapsed! You can't work!");
+                            }
+                            else{
+                                showErrorDialogShiftState("Can't not work! Shift state: " + getCurrentShift.getShiftState());
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<GetCurrentShift> call, Throwable t) {
+
+            }
+        });
     }
 
     @Override
@@ -316,9 +421,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void registerDevice() {
-        Call<RegisterDevice> call = peServiceAPI.registerDevice(deviceId, "Android " + deviceModel);
+        Call<RegisterDevice> call = peServiceAPI.registerDevice(deviceId, "Android " + deviceModel, SPFHelp.getInstance().getString("CashId",""), SPFHelp.getInstance().getString("TokenId",""));
 
-        progressDialog.setMessage("Register device...");
+        progressDialog.setMessage("Check device...");
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
         progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
@@ -338,25 +443,22 @@ public class MainActivity extends AppCompatActivity {
                 RegisterDevice device = response.body();
                 if(device != null)
                     if(device.getNoError() == 0 && device.getRegistred()){
-                        terminalUser.setText(device.getOwner());
                         terminalNumber.setText("Nr: " + device.getRegistredNumber());
                         SPFHelp.getInstance().putInt("RegisteredNumber", device.getRegistredNumber());
-                        SPFHelp.getInstance().putString("Owner", device.getOwner());
-                        SPFHelp.getInstance().putString("Cash", device.getCash());
                     }
-                    else showErrorDialog("Device not registered! Message: " + device.getErrorMessage());
-                else showErrorDialog("Device not registered! Not response!");
+                    else showErrorDialogRegisterDevice("Device not registered! Message: " + device.getErrorMessage());
+                else showErrorDialogRegisterDevice("Device not registered! Not response!");
             }
 
             @Override
             public void onFailure(Call<RegisterDevice> call, Throwable t) {
                 progressDialog.dismiss();
-                showErrorDialog("Device not registered! Message: " + t.getMessage());
+                showErrorDialogRegisterDevice("Device not registered! Message: " + t.getMessage());
             }
         });
     }
 
-    private void showErrorDialog(String text) {
+    private void showErrorDialogRegisterDevice(String text) {
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                 .setTitle("Attention!")
                 .setMessage(text)
@@ -367,6 +469,20 @@ public class MainActivity extends AppCompatActivity {
                 .setNegativeButton("Retry",((dialogInterface, i) -> {
                     registerDevice();
                 }))
+                .show();
+    }
+
+    private void showErrorDialogShiftState(String text) {
+        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setTitle("Attention!")
+                .setMessage(text)
+                .setCancelable(false)
+                .setPositiveButton("OK", (dialogInterface, i) -> {
+                    finish();
+                })
+//                .setNegativeButton("Retry",((dialogInterface, i) -> {
+//
+//                }))
                 .show();
     }
 

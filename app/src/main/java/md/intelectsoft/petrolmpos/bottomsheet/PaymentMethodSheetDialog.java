@@ -25,17 +25,18 @@ import com.vfi.smartpos.deviceservice.aidl.IPrinter;
 import com.vfi.smartpos.deviceservice.aidl.PrinterConfig;
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.realm.Realm;
 import md.intelectsoft.petrolmpos.BaseApp;
-import md.intelectsoft.petrolmpos.CountProductWithoutActivity;
+import md.intelectsoft.petrolmpos.CountProductActivity;
 import md.intelectsoft.petrolmpos.R;
+import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.adapters.PaymentWithoutAdapter;
 import md.intelectsoft.petrolmpos.paymentactivity.BPayPaymentActivity;
 import md.intelectsoft.petrolmpos.printeractivity.PrinterFonts;
+import md.intelectsoft.petrolmpos.realm.FiscalKey;
 
 
 /**
@@ -112,6 +113,7 @@ public class PaymentMethodSheetDialog extends BottomSheetDialogFragment {
                 startActivity(new Intent(getContext(), BPayPaymentActivity.class));
             }
             else if(test.equals("Item 1")){
+                //Cash payment
                 if(BaseApp.isVFServiceConnected()){
                     idevice = BaseApp.getApplication().getDeviceService();
                     try {
@@ -138,102 +140,124 @@ public class PaymentMethodSheetDialog extends BottomSheetDialogFragment {
             // bundle formate for AddTextInLine
             Bundle fmtAddTextInLine = new Bundle();
             //
-            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_DH_24_48_IN_BOLD);
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
+//            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_DH_24_48_IN_BOLD);
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
+////            printer.addText(format, "Hello!");
+//
+//            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.LARGE_DH_32_64_IN_BOLD);
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
+////            printer.addText(format, "Hello!");
+//
+//            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
 //            printer.addText(format, "Hello!");
-
-            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.LARGE_DH_32_64_IN_BOLD);
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-//            printer.addText(format, "Hello!");
-
-            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            printer.addText(format, "Hello!");
-
-            // image
-
-            byte[] buffer = null;
-            try {
-                //
-                InputStream is = getContext().getAssets().open("verifone_logo.jpg");
-                // get the size
-                int size = is.available();
-                // crete the array of byte
-                buffer = new byte[size];
-                is.read(buffer);
-                // close the stream
-                is.close();
-
-            } catch (IOException e) {
-                // Should never happen!
-                throw new RuntimeException(e);
-            }
-            if( null != buffer) {
-                Bundle fmtImage = new Bundle();
-                fmtImage.putInt("offset", (384-200)/2);
-                fmtImage.putInt("width", 250);  // bigger then actual, will print the actual
-                fmtImage.putInt("height", 128); // bigger then actual, will print the actual
-                printer.addImage( fmtImage, buffer );
-
-                fmtImage.putInt("offset", 50 );
-                fmtImage.putInt("width", 100 ); // smaller then actual, will print the setting
-                fmtImage.putInt("height", 24); // smaller then actual, will print the setting
-                printer.addImage( fmtImage, buffer );
-            }
+//
+//            // image
+//
+//            byte[] buffer = null;
+//            try {
+//                //
+//                InputStream is = getContext().getAssets().open("verifone_logo.jpg");
+//                // get the size
+//                int size = is.available();
+//                // crete the array of byte
+//                buffer = new byte[size];
+//                is.read(buffer);
+//                // close the stream
+//                is.close();
+//
+//            } catch (IOException e) {
+//                // Should never happen!
+//                throw new RuntimeException(e);
+//            }
+//            if( null != buffer) {
+//                Bundle fmtImage = new Bundle();
+//                fmtImage.putInt("offset", (384-200)/2);
+//                fmtImage.putInt("width", 250);  // bigger then actual, will print the actual
+//                fmtImage.putInt("height", 128); // bigger then actual, will print the actual
+//                printer.addImage( fmtImage, buffer );
+//
+//                fmtImage.putInt("offset", 50 );
+//                fmtImage.putInt("width", 100 ); // smaller then actual, will print the setting
+//                fmtImage.putInt("height", 24); // smaller then actual, will print the setting
+//                printer.addImage( fmtImage, buffer );
+//            }
 
 
             //
-            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_FORTE );
-            printer.addTextInLine(fmtAddTextInLine, "Verifone X9-Series", "", "", 0);
-            //
-            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24 );
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_segoesc );
-            printer.addTextInLine(fmtAddTextInLine, "", "", "This is the Print Demo", 0);
+//            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_FORTE );
+//            printer.addTextInLine(fmtAddTextInLine, "Verifone X9-Series", "", "", 0);
+//            //
+//            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24 );
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_segoesc );
+//            printer.addTextInLine(fmtAddTextInLine, "", "", "This is the Print Demo", 0);
 
 
             format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24);
-            printer.addText(format, "Hello Verifone in font NORMAL_24_24!");
-            // left
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
-            printer.addText(format, "Left Alignment long string here: PrinterConfig.addText.Alignment.LEFT ");
+            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
+            printer.addText(format, "\"" + SPFHelp.getInstance().getString("CompanyName", "") + "\"");
 
-            // right
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.RIGHT );
-            printer.addText(format, "Right Alignment  long  string with wrapper here");
+            printer.addText(format, "IDNO: " + SPFHelp.getInstance().getString("CompanyIDNO", ""));
+            printer.addText(format, "Inr.Nr: " + SPFHelp.getInstance().getString("FiscalCode", ""));
+            printer.addText(format, "");
+
+            printer.addTextInLine( fmtAddTextInLine, "00001" , "", "01 #", 0);
+
+            printer.addTextInLine( fmtAddTextInLine, "#-" + SPFHelp.getInstance().getString("Cash", "Casa nui"), "", "#", 0);
+            printer.addTextInLine( fmtAddTextInLine, "#-" + SPFHelp.getInstance().getString("Owner", "Autor nui"), "", "#", 0);
+            printer.addTextInLine( fmtAddTextInLine, "#-Id: 00000" , "", "#", 0);
+            printer.addText(format, "");
+
+//            // left
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
+//            printer.addText(format, "Left Alignment long string here: PrinterConfig.addText.Alignment.LEFT ");
+//
+//            // right
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.RIGHT );
+//            printer.addText(format, "Right Alignment  long  string with wrapper here");
 
             printer.addText(format, "--------------------------------");
-            Bundle fmtAddBarCode = new Bundle();
-            fmtAddBarCode.putInt( PrinterConfig.addBarCode.Alignment.BundleName, PrinterConfig.addBarCode.Alignment.RIGHT );
-            fmtAddBarCode.putInt( PrinterConfig.addBarCode.Height.BundleName, 64 );
-            printer.addBarCode( fmtAddBarCode, "123456 Verifone" );
 
-            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.FONT_AGENCYB);
-            printer.addTextInLine(fmtAddTextInLine, "", "123456 Verifone", "", 0);
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterConfig.addTextInLine.GlobalFont.English );    // set to the default
+            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_DH_24_48_IN_BOLD);
 
-            printer.addText(format, "--------------------------------");
+            printer.addTextInLine( fmtAddTextInLine, "TOTAL" , "", "54.00", 0);
+
+            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24 );
+            printer.addTextInLine( fmtAddTextInLine, "IntelectSoft S.R.L." , "", "", 0);
+
+//            Bundle fmtAddBarCode = new Bundle();
+//            fmtAddBarCode.putInt( PrinterConfig.addBarCode.Alignment.BundleName, PrinterConfig.addBarCode.Alignment.RIGHT );
+//            fmtAddBarCode.putInt( PrinterConfig.addBarCode.Height.BundleName, 64 );
+//            printer.addBarCode( fmtAddBarCode, "123456 Verifone" );
+//
+//            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.FONT_AGENCYB);
+//            printer.addTextInLine(fmtAddTextInLine, "", "123456 Verifone", "", 0);
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterConfig.addTextInLine.GlobalFont.English );    // set to the default
+//
+//            printer.addText(format, "--------------------------------");
 
 
-            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_ALGER );
-            printer.addTextInLine( fmtAddTextInLine, "Left", "Center", "right", 0);
-            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_BROADW );
-            printer.addTextInLine( fmtAddTextInLine, "L & R", "", "Divide Equally", 0);
-            printer.addTextInLine( fmtAddTextInLine, "L & R", "", "Divide flexible", PrinterConfig.addTextInLine.mode.Devide_flexible);
-            // left
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
-            printer.addText(format, "--------------------------------");
-
-            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterConfig.addTextInLine.GlobalFont.English);
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_segoesc );
-            printer.addTextInLine( fmtAddTextInLine,
-                    "", "",
-                    "Right long string here call addTextInLine ONLY give the right string",
-                    0);
+//            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_ALGER );
+//            printer.addTextInLine( fmtAddTextInLine, "Left", "Center", "right", 0);
+//            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_BROADW );
+//            printer.addTextInLine( fmtAddTextInLine, "L & R", "", "Divide Equally", 0);
+//            printer.addTextInLine( fmtAddTextInLine, "L & R", "", "Divide flexible", PrinterConfig.addTextInLine.mode.Devide_flexible);
+//            // left
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
+//            printer.addText(format, "--------------------------------");
+//
+//            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.LARGE_32_32 );
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterConfig.addTextInLine.GlobalFont.English);
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.path + PrinterFonts.FONT_segoesc );
+//            printer.addTextInLine( fmtAddTextInLine,
+//                    "",
+//                    "",
+//                    "Right long string here call addTextInLine ONLY give the right string",
+//                    0);
 
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
             format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24 );
@@ -250,13 +274,19 @@ public class PaymentMethodSheetDialog extends BottomSheetDialogFragment {
                     PrinterConfig.addTextInLine.mode.Devide_flexible);
 
 
-            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            printer.addText(format, "BON FISCAL!");
+            Realm mRealm = Realm.getDefaultInstance();
+            FiscalKey key = mRealm.where(FiscalKey.class).findFirst();
+            if(key == null){
+                format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
+                format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
+                printer.addText(format, "BON NEFISCAL!");
+            }
+            else{
+                format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
+                format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
+                printer.addText(format, "BON FISCAL!");
+            }
 
-            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            printer.addText(format, "BON NEFISCAL!");
 
             Bundle fmtAddQRCode = new Bundle();
             fmtAddQRCode.putInt(PrinterConfig.addQrCode.Offset.BundleName, 128);
@@ -321,7 +351,7 @@ public class PaymentMethodSheetDialog extends BottomSheetDialogFragment {
 
         if (dialog != null) {
             bottomSheet = dialog.findViewById(R.id.design_bottom_sheet);
-            int displayHeight = CountProductWithoutActivity.displayMetrics.heightPixels;
+            int displayHeight = CountProductActivity.displayMetrics.heightPixels;
             int dialogWindowHeight = (int) (displayHeight * 0.85f);
             bottomSheet.getLayoutParams().height = dialogWindowHeight;
         }

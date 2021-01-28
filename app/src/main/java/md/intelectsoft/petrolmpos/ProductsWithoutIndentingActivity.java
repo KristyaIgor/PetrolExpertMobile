@@ -6,10 +6,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AbsListView;
-import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ListView;
 
 import java.util.List;
@@ -18,7 +14,6 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import md.intelectsoft.petrolmpos.adapters.AssortmentAdapter;
-import md.intelectsoft.petrolmpos.models.ToggleButton;
 import md.intelectsoft.petrolmpos.network.pe.result.AssortmentSerializable;
 
 @SuppressLint("NonConstantResourceId")
@@ -55,7 +50,7 @@ public class ProductsWithoutIndentingActivity extends AppCompatActivity {
 
         listProducts.setOnItemClickListener((parent, view, position, id) -> {
             productSelected = adapter.getItem(position);
-            Intent count = new Intent(context, CountProductWithoutActivity.class);
+            Intent count = new Intent(context, CountProductActivity.class);
             count.putExtra("Identify", false);
             count.putExtra("Product", productSelected);
             startActivityForResult(count,154);

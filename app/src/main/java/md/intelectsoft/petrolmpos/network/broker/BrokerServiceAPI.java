@@ -6,6 +6,8 @@ import md.intelectsoft.petrolmpos.network.broker.Body.SendGetURI;
 import md.intelectsoft.petrolmpos.network.broker.Body.SendRegisterApplication;
 import md.intelectsoft.petrolmpos.network.broker.Results.ErrorMessage;
 import md.intelectsoft.petrolmpos.network.broker.Results.RegisterApplication;
+import md.intelectsoft.petrolmpos.network.pe.body.SetFiscalBody;
+import md.intelectsoft.petrolmpos.network.pe.result.SetFiscal;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -23,4 +25,7 @@ public interface BrokerServiceAPI {
 
     @POST("/ISConnectionBrokerService/json/UpdateDiagnosticInformation")
     Call<ErrorMessage> updateDiagnosticInfo(@Body InformationData informationData);
+
+    @POST ("/ISConnectionBrokerService/json/SetAsFiscal")
+    Call<SetFiscal> setAsFiscal (@Body SetFiscalBody licenseData);
 }

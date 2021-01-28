@@ -27,7 +27,8 @@ public class SplashActivity extends AppCompatActivity {
         new Timer().schedule(new TimerTask() {
             public void run() {
                 String licenseID = SPFHelp.getInstance().getString("LicenseID", null);
-                if(licenseID == null)
+                boolean firstStart = SPFHelp.getInstance().getBoolean("FirstStart", true);
+                if(licenseID == null || firstStart)
                     startActivity(new Intent(SplashActivity.this, AuthorizeActivity.class));
                 else
                     startActivity(new Intent(SplashActivity.this, MainActivity.class));

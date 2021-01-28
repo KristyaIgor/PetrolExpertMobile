@@ -58,7 +58,7 @@ public class AssortmentCardAdapter extends ArrayAdapter<AssortmentCardSerializab
 
         viewHolder.productName.setText(item.getName());
         viewHolder.productPrice.setText(item.getPrice() + " MDL");
-        viewHolder.productCount.setText(String.valueOf(item.getCardBalance()));
+        viewHolder.productCount.setText(String.format("%.2f", item.getDailyLimit() - item.getDailyLimitConsumed()).replace(",","."));
 
         return convertView;
     }
