@@ -297,7 +297,7 @@ public class AuthorizeActivity extends AppCompatActivity {
         progressDialog.setMessage(getString(R.string.obtain_cash_list_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, getString(R.string.cancel_button), (dialog, which) -> {
+        progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel_button), (dialog, which) -> {
             call.cancel();
             if(call.isCanceled())
                 dialog.dismiss();

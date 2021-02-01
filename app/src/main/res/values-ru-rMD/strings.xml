@@ -82,4 +82,6 @@
     <string name="input_count">Введите кол-во:</string>
     <string name="save_bill_pg">Сохранение счета...</string>
     <string name="bills_activity">Счета</string>
+    <string name="change_user_msg">Вы уверены что хотите сменить пользователя?</string>
+    <string name="yes_btn">Сменить</string>
 </resources>

@@ -199,15 +199,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.imageButtonLogout) void onPrintX(){
-        SPFHelp.getInstance().putLong("TokenValid", 0);
-        SPFHelp.getInstance().putString("TokenId", null);
-        SPFHelp.getInstance().putString("Owner", null);
-        SPFHelp.getInstance().putString("UserCodeAuth", null);
-        SPFHelp.getInstance().putInt("RegisteredNumber", 0);
-        SPFHelp.getInstance().putBoolean("FirstStart", true);
+        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setTitle(getString(R.string.attention_dialog_title))
+                .setMessage(getString(R.string.change_user_msg))
+                .setPositiveButton(R.string.yes_btn, (dialogInterface, i) -> {
+                    SPFHelp.getInstance().putLong("TokenValid", 0);
+                    SPFHelp.getInstance().putString("TokenId", null);
+                    SPFHelp.getInstance().putString("Owner", null);
+                    SPFHelp.getInstance().putString("UserCodeAuth", null);
+                    SPFHelp.getInstance().putInt("RegisteredNumber", 0);
+                    SPFHelp.getInstance().putBoolean("FirstStart", true);
 
-        startActivity(new Intent(context, AuthorizeActivity.class));
-        finish();
+                    startActivity(new Intent(context, AuthorizeActivity.class));
+                    finish();
+                })
+                .setNegativeButton(getString(R.string.cancel_button), (dialog, which) -> {
+                    dialog.dismiss();
+                })
+                .show();
     }
 
     @OnClick(R.id.imageButtonInfo) void onInfo() {
@@ -558,6 +567,7 @@ public class MainActivity extends AppCompatActivity {
                         licenseData.put("LicenseCode", null);
                         licenseData.put("CompanyName", null);
                         licenseData.put("CompanyIDNO", null);
+                        SPFHelp.getInstance().putString("CashId", null);
 
                         SPFHelp.getInstance().putStrings(licenseData);
                         SPFHelp.getInstance().putBoolean("KeepMeSigned", false);
@@ -577,6 +587,7 @@ public class MainActivity extends AppCompatActivity {
                         licenseData.put("LicenseCode", null);
                         licenseData.put("CompanyName", null);
                         licenseData.put("CompanyIDNO", null);
+                        SPFHelp.getInstance().putString("CashId", null);
 
                         SPFHelp.getInstance().putStrings(licenseData);
 
@@ -596,6 +607,7 @@ public class MainActivity extends AppCompatActivity {
                         licenseData.put("LicenseCode", null);
                         licenseData.put("CompanyName", null);
                         licenseData.put("CompanyIDNO", null);
+                        SPFHelp.getInstance().putString("CashId", null);
 
                         SPFHelp.getInstance().putStrings(licenseData);
 
@@ -625,6 +637,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkApplicationUserAvailable() {
+        //TODO check app id can work if not response from broker service
 
     }
 

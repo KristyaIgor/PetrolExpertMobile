@@ -82,4 +82,6 @@
     <string name="input_count">Introduceti cantitatea:</string>
     <string name="save_bill_pg">Salvarea contului...</string>
     <string name="bills_activity">Conturile</string>
+    <string name="change_user_msg">Sunteti sigur ca doriti sa schimbati utilizatorul?</string>
+    <string name="yes_btn">Schimba</string>
 </resources>

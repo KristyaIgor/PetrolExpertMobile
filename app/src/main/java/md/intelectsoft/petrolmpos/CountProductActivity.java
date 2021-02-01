@@ -729,6 +729,7 @@ public class CountProductActivity extends AppCompatActivity {
     class MyListener extends PrinterListener.Stub {
         @Override
         public void onError(int error) throws RemoteException {
+            progressDialog.dismiss();
             if (error == 240) { // finish paper
                 showDialogPrinterError("Paper out, please put new paper in printer and retry print bill!");
             }
