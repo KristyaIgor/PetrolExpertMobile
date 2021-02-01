@@ -6,6 +6,9 @@ import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -26,15 +29,21 @@ import com.vfi.smartpos.deviceservice.aidl.IPrinter;
 import com.vfi.smartpos.deviceservice.aidl.PrinterConfig;
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.realm.Realm;
+import io.realm.RealmList;
+import md.intelectsoft.petrolmpos.Utils.LocaleHelper;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.bottomsheet.PaymentMethodSheetDialog;
+import md.intelectsoft.petrolmpos.enums.LimitCardEnum;
 import md.intelectsoft.petrolmpos.models.ToggleButton;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
@@ -64,8 +73,9 @@ public class CountProductActivity extends AppCompatActivity {
     boolean isLeftButtonSelected = true;
 
     String nameProduct, cardId;
-    double priceProduct = 0;
+    double priceProduct = 0 , maxClientAvailable = 0;
     private boolean isAuth = false;
+    int limitType;
     ProgressDialog progressDialog;
     PEServiceAPI peServiceAPI;
     Context context;
@@ -79,6 +89,8 @@ public class CountProductActivity extends AppCompatActivity {
 
     IDeviceService idevice;
     IPrinter printer;
+
+    BillRegistered bill;
 
 
     @OnClick(R.id.imageCancelCount) void onCloseCount(){
@@ -203,46 +215,62 @@ public class CountProductActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.buttonPayWithoutIdentify) void onPay(){
-        double sum = Double.parseDouble(countOrSum.getText().toString());
-        if(sum > 0 && totalBill.getError() == null){
-            if(isAuth){
-                buttonPay.setText("Salveaza");
-
-                BillRegistered bill = new BillRegistered();
-                bill.setClientCardCode(cardId);
-                bill.setOfficeCode(SPFHelp.getInstance().getString("deviceId",""));
-                bill.setShiftId(SPFHelp.getInstance().getString("ShiftId",""));
-
-                LineBill lineBill = new LineBill();
-                PaymentBill paymentBill = new PaymentBill();
-
-                lineBill.setNomenclatureCode(productWithAuth.getAssortmentCode());
-                lineBill.setPrice(productWithAuth.getPrice());
-                lineBill.setDiscountedPrice(productWithAuth.getPrice());
-                lineBill.setName(productWithAuth.getName());
-
-                if(isLeftButtonSelected){
-                    lineBill.setSum(sum);
-                    lineBill.setCount(sum / productWithAuth.getPrice());
-                    lineBill.setDiscountedSum(sum);
-                    paymentBill.setSum(sum);
+        double sumOrQuantity = round(Double.parseDouble(countOrSum.getText().toString()), 2);
+        if(sumOrQuantity > 0){
+            if(isAuth){ // Если продажа клиенту который авторизацию прошел , либо QR кодом либо корпоративной картой
+                if(isLeftButtonSelected){ //Если продажа идет по сумме
+                    if(productWithAuth.getDailyLimit() == 0){ // Если лимит у товара 0 проверяю по доступной сумме
+                        if(sumOrQuantity < maxClientAvailable) // если сумма чека меньше чем доступная сумма , продажа разрешается
+                            sendBillToBackAndSaveLocal(sumOrQuantity , round(sumOrQuantity / productWithAuth.getPrice(), 2));
+                        else // Если сумма чека больше чем доступная сумма, продажа блокируется , выводится сообщение на экран в лееях
+                            showErrorDialogRegisterBill("Сумма чека больше чем доступная сумма клиента! Вы превысели на: " + round(sumOrQuantity - maxClientAvailable, 2) + " MDL");
+                    }
+                    else{ //иначе проверяю по лимиту у товара
+                        if(limitType == LimitCardEnum.MDL){  // если лимит стоит в лееях
+                            double sumOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
+                            double quantity = round(sumOrQuantity / productWithAuth.getPrice(), 2);
+                            if(sumOrQuantity < sumOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
+                                sendBillToBackAndSaveLocal(sumOrQuantity , quantity);
+                            else // иначе продажа блокируется , выводится сообщение на экран в лееях
+                                showErrorDialogRegisterBill("Первышен дневной лимит! Вы превысели на: " + round(sumOrQuantity - sumOfLimit, 2) + " MDL");
+                        }
+                        else{ //иначе проверяю по литрам
+                            double literOfInput = round(sumOrQuantity / productWithAuth.getPrice(), 2);
+                            double literOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
+                            if(literOfInput < literOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
+                                sendBillToBackAndSaveLocal(sumOrQuantity , literOfInput);
+                            else // иначе продажа блокируется , выводится сообщение на экран в лееях
+                                showErrorDialogRegisterBill("Первышен дневной лимит! Вы превысели на: " + round(literOfInput - literOfLimit, 2) + " L.");
+                        }
+                    }
                 }
-                else{
-                    lineBill.setSum(sum * productWithAuth.getPrice());
-                    lineBill.setCount(sum);
-                    lineBill.setDiscountedSum(sum * productWithAuth.getPrice());
-                    paymentBill.setSum(sum * productWithAuth.getPrice());
+                else{  // если продажа идет по литрам
+                    if(productWithAuth.getDailyLimit() == 0){ // Если лимит у товара 0 проверяю по доступной сумме
+                        double sumOfInput = round(sumOrQuantity * productWithAuth.getPrice(), 2);
+                        if(sumOfInput < maxClientAvailable)  //если кол-во товара умножить на цену товара, меньше чем доступная сумма, продажа разрешается
+                            sendBillToBackAndSaveLocal(sumOfInput , sumOrQuantity);
+                        else // иначе продажа блокируется , выводится сообщение на экран в литрах
+                            showErrorDialogRegisterBill("Вы ввели больше топливо чем у клиента доступно! Вы превысели на: " + (sumOfInput - maxClientAvailable) + " MDL");
+                    }
+                    else{ //иначе проверяю по лимиту у товара
+                        if(limitType == LimitCardEnum.MDL){  // если лимит стоит в лееях
+                            double sumOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
+                            double sumOfInput = round(sumOrQuantity * productWithAuth.getPrice(), 2);
+                            if(sumOfInput < sumOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
+                                sendBillToBackAndSaveLocal(sumOfInput , sumOrQuantity);
+                            else // иначе продажа блокируется , выводится сообщение на экран в лееях
+                                showErrorDialogRegisterBill("Первышен дневной лимит! Вы превысели на: " + round(sumOfInput - sumOfLimit, 2) + " MDL");
+                        }
+                        else{ //иначе проверяю по литрам
+                            double sumOfInput = round(sumOrQuantity * productWithAuth.getPrice(), 2);
+                            double literOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
+                            if(sumOrQuantity < literOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
+                                sendBillToBackAndSaveLocal(sumOfInput , sumOrQuantity);
+                            else // иначе продажа блокируется , выводится сообщение на экран в лееях
+                                showErrorDialogRegisterBill("Первышен дневной лимит! Вы превысели на: " + round(sumOrQuantity - literOfLimit, 2) + " L.");
+                        }
+                    }
                 }
-                paymentBill.setPaymentCode(0);
-                List<PaymentBill> paymentBillList = new ArrayList<>();
-                List<LineBill> listLines = new ArrayList<>();
-                listLines.add(lineBill);
-                paymentBillList.add(paymentBill);
-
-                bill.setLines(listLines);
-                bill.setPaymentBills(paymentBillList);
-
-                registerBillToBack(bill);
             }
             else{
 
@@ -251,15 +279,64 @@ public class CountProductActivity extends AppCompatActivity {
             }
         }
         else{
-            Toast error = Toast.makeText(this, "Check field!", Toast.LENGTH_SHORT);
+            Toast error = Toast.makeText(this, getString(R.string.please_input_the_field), Toast.LENGTH_SHORT);
             error.setGravity(Gravity.CENTER, 0, -100);
             error.show();
         }
     }
 
+    public static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        long factor = (long) Math.pow(10, places);
+        value = value * factor;
+        long tmp = Math.round(value);
+        return (double) tmp / factor;
+    }
+
+    private void sendBillToBackAndSaveLocal(double sum , double quantity) {
+        bill = new BillRegistered();
+        bill.setClientCardCode(cardId);
+        bill.setOfficeCode(SPFHelp.getInstance().getString("deviceId",""));
+        bill.setDate(new Date().getTime());
+        bill.setAuthorId(SPFHelp.getInstance().getString("OwnerId",""));
+        bill.setAuthorName(SPFHelp.getInstance().getString("Owner",""));
+        bill.setCashId(SPFHelp.getInstance().getString("CashId",""));
+        bill.setCashName(SPFHelp.getInstance().getString("Cash",""));
+        bill.setStationName(SPFHelp.getInstance().getString("StationName", ""));
+
+        LineBill lineBill = new LineBill();
+        PaymentBill paymentBill = new PaymentBill();
+
+        lineBill.setNomenclatureCode(productWithAuth.getAssortmentCode());
+        lineBill.setPrice(productWithAuth.getPrice());
+        lineBill.setDiscountedPrice(productWithAuth.getPrice());
+        lineBill.setName(productWithAuth.getName());
+
+        lineBill.setSum(sum);
+        lineBill.setCount(quantity);
+        lineBill.setDiscountedSum(sum);
+
+        paymentBill.setSum(sum);
+        paymentBill.setPaymentCode(0);
+
+        RealmList<PaymentBill> paymentBillList = new RealmList<>();
+        RealmList<LineBill> listLines = new RealmList<>();
+
+        listLines.add(lineBill);
+        paymentBillList.add(paymentBill);
+
+        bill.setLines(listLines);
+        bill.setPaymentBills(paymentBillList);
+
+        registerBillToBack(bill);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        String lang = LocaleHelper.getLanguage(this);
+        setAppLocale(lang);
         setContentView(R.layout.activity_count_product_without);
 
         ButterKnife.bind(this);
@@ -277,6 +354,8 @@ public class CountProductActivity extends AppCompatActivity {
         Intent intent = getIntent();
         isAuth = intent.getBooleanExtra("Identify",false);
         cardId = intent.getStringExtra("ClientCardCode");
+        maxClientAvailable = intent.getDoubleExtra("ClientMaxAvailable", 0);
+        limitType = intent.getIntExtra("LimitType", 0);
 
         if(isAuth){
             //with identify
@@ -284,8 +363,6 @@ public class CountProductActivity extends AppCompatActivity {
 
             nameProduct = productWithAuth.getName();
             priceProduct = productWithAuth.getPrice();
-
-
         }
         else{
             //without identify
@@ -302,7 +379,7 @@ public class CountProductActivity extends AppCompatActivity {
             @Override
             public void onLefToggleEnabled(boolean enabled) {
                 if(enabled) isLeftButtonSelected = true;
-                titleCountOrSum.setText("Introduceti suma:");
+                titleCountOrSum.setText(getString(R.string.input_summ));
                 double sum = Double.parseDouble(countOrSum.getText().toString());
                 totalBill.setText(String.format("%.2f",sum / priceProduct).replace(",",".") + " L");
 
@@ -311,7 +388,7 @@ public class CountProductActivity extends AppCompatActivity {
             @Override
             public void onRightToggleEnabled(boolean enabled) {
                 if (enabled) isLeftButtonSelected = false;
-                titleCountOrSum.setText("Introduceti cantitatea:");
+                titleCountOrSum.setText(getString(R.string.input_count));
                 double count = Double.parseDouble(countOrSum.getText().toString());
                 totalBill.setText(String.format("%.2f",count * priceProduct).replace(",",".") + " MDL");
             }
@@ -339,30 +416,10 @@ public class CountProductActivity extends AppCompatActivity {
                     if(isLeftButtonSelected){
                         double sum = Double.parseDouble(countOrSum.getText().toString());
                         totalBill.setText(String.format("%.2f", sum / priceProduct).replace(",", ".") + " L");
-                        if(isAuth){
-                            if(sum / productWithAuth.getPrice() < productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed())
-                                totalBill.setError(null);
-                            else
-                                totalBill.setError("Depasita limita!");
-                        }
-                        else{
-
-                        }
-
                     }
                     else{
                         double countText = Double.parseDouble(countOrSum.getText().toString());
                         totalBill.setText(String.format("%.2f", countText * priceProduct).replace(",", ".") + " MDL");
-                        if(isAuth) {
-                            if (countText < productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed())
-                                totalBill.setError(null);
-                            else
-                                totalBill.setError("Depasita limita!");
-                        }
-                        else{
-
-                        }
-
                     }
                 }
             }
@@ -377,10 +434,10 @@ public class CountProductActivity extends AppCompatActivity {
     private void registerBillToBack(BillRegistered bill) {
         Call<RegisterBillResponse> call = peServiceAPI.registerBill(bill);
 
-        progressDialog.setMessage("Save bill...");
+        progressDialog.setMessage(getString(R.string.save_bill_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", (dialog, which) -> {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), (dialog, which) -> {
             call.cancel();
             if(call.isCanceled())
                 dialog.dismiss();
@@ -391,12 +448,8 @@ public class CountProductActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<RegisterBillResponse> call, Response<RegisterBillResponse> response) {
                 RegisterBillResponse billResponse = response.body();
-                progressDialog.dismiss();
-
                 if(billResponse != null){
-                    Toast.makeText(CountProductActivity.this, "Bill register: " + billResponse.getErrorCode(), Toast.LENGTH_SHORT).show();
                     if(billResponse.getErrorCode() == 0){
-                        //TODO send bill to fiscal service and save local and print this bill
                         if(BaseApp.isVFServiceConnected()){
                             idevice = BaseApp.getApplication().getDeviceService();
                             try {
@@ -405,33 +458,44 @@ public class CountProductActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
 
-                            doPrintString(bill);
+                            if(getPrinterStatus())
+                                doPrintString();
                         }
+
+                        Realm.getDefaultInstance().executeTransaction(realm -> {
+                            realm.insert(bill);
+                        });
                     }
+                    else
+                        showErrorDialogRegisterBill("Error register bill! Code: " + billResponse.getErrorCode());
                 }
+                else
+                    showErrorDialogRegisterBill("Error register bill! Response is empty.");
             }
 
             @Override
             public void onFailure(Call<RegisterBillResponse> call, Throwable t) {
                 progressDialog.dismiss();
-                Toast.makeText(CountProductActivity.this, "Failure register bill to back office! Message: " + t.getMessage() , Toast.LENGTH_SHORT).show();
+                showErrorDialogRegisterBill("Failure register bill to back office! Message: " + t.getMessage());
             }
         });
     }
 
 
     private void showErrorDialogRegisterBill (String text) {
+        progressDialog.dismiss();
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("Attention!")
+                .setTitle(getString(R.string.attention_dialog_title))
                 .setMessage(text)
                 .setCancelable(false)
-                .setPositiveButton("OK", (dialogInterface, i) -> {
-
+                .setPositiveButton(getString(R.string.ok_button),null)
+                .setPositiveButton(getString(R.string.retry_button), (dialogInterface, i) -> {
+                    registerBillToBack(bill);
                 })
                 .show();
     }
 
-    public void doPrintString(BillRegistered bill) {
+    public void doPrintString() {
         try {
             // bundle format for addText
             Bundle format = new Bundle();
@@ -569,15 +633,15 @@ public class CountProductActivity extends AppCompatActivity {
 //                    "Right long string here call addTextInLine ONLY give the right string",
 //                    0);
 
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
-            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24 );
-            printer.addText(format, "--------------------------------");
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
+//            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24 );
+//            printer.addText(format, "--------------------------------");
 
-
-            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterConfig.addTextInLine.GlobalFont.English);  // this the default
-            printer.addTextInLine( fmtAddTextInLine, "", "#",
-                    "Right long string with the center string",
-                    0);
+//
+//            fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterConfig.addTextInLine.GlobalFont.English);  // this the default
+//            printer.addTextInLine( fmtAddTextInLine, "", "#",
+//                    "Right long string with the center string",
+//                    0);
             printer.addText(format, "--------------------------------");
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.SMALL_16_16);
             fmtAddTextInLine.putString(PrinterConfig.addTextInLine.GlobalFont.BundleName, PrinterFonts.FONT_AGENCYB);
@@ -619,19 +683,128 @@ public class CountProductActivity extends AppCompatActivity {
         }
     }
 
+
+    /**
+     * 获取打印机状态 | get printer status
+     * <ul>
+     * <li>ERROR_NONE(0x00) - 状态正常</li>
+     * <li>ERROR_PAPERENDED(0xF0) - 缺纸，不能打印</li>
+     * <li>ERROR_NOCONTENT(0xF1) - 打印内存无内容</li>
+     * <li>ERROR_HARDERR(0xF2) - 硬件错误</li>
+     * <li>ERROR_OVERHEAT(0xF3) - 打印头过热</li>
+     * <li>ERROR_BUFOVERFLOW(0xF5) - 缓冲模式下所操作的位置超出范围 </li>
+     * <li>ERROR_LOWVOL(0xE1) - 低压保护 </li>
+     * <li>ERROR_PAPERENDING(0xF4) - 纸张将要用尽，还允许打印(单步进针打特有返回值)</li>
+     * <li>ERROR_MOTORERR(0xFB) - 打印机芯故障(过快或者过慢)</li>
+     * <li>ERROR_PENOFOUND(0xFC) - 自动定位没有找到对齐位置,纸张回到原来位置   </li>
+     * <li>ERROR_PAPERJAM(0xEE) - 卡纸</li>
+     * <li>ERROR_NOBM(0xF6) - 没有找到黑标</li>
+     * <li>ERROR_BUSY(0xF7) - 打印机处于忙状态</li>
+     * <li>ERROR_BMBLACK(0xF8) - 黑标探测器检测到黑色信号</li>
+     * <li>ERROR_WORKON(0xE6) - 打印机电源处于打开状态</li>
+     * <li>ERROR_LIFTHEAD(0xE0) - 打印头抬起(自助热敏打印机特有返回值)</li>
+     * <li>ERROR_CUTPOSITIONERR(0xE2) - 切纸刀不在原位(自助热敏打印机特有返回值)</li>
+     * <li>ERROR_LOWTEMP(0xE3) - 低温保护或AD出错(自助热敏打印机特有返回值)</li>
+     * </ul>
+     * \_en_
+     *  get printer status
+     *
+     *  the status:
+     * <ul>
+     * <li>ERROR_NONE(0x00) - normal</li>
+     * <li>ERROR_PAPERENDED(0xF0) - Paper out</li>
+     * <li>ERROR_NOCONTENT(0xF1) - no content</li>
+     * <li>ERROR_HARDERR(0xF2) - printer error</li>
+     * <li>ERROR_OVERHEAT(0xF3) - over heat</li>
+     * <li>ERROR_BUFOVERFLOW(0xF5) - buffer overflow</li>
+     * <li>ERROR_LOWVOL(0xE1) - battery low</li>
+     * <li>ERROR_PAPERENDING(0xF4) - Paper low for sprocket printer</li>
+     * <li>ERROR_MOTORERR(0xFB) - moto error</li>
+     * <li>ERROR_PAPERJAM(0xEE) - paper jam</li>
+     * <li>ERROR_BUSY(0xF7) - printer is busy</li>
+     * <li>ERROR_WORKON(0xE6) - printer is awake</li>
+     * </ul>
+     * \en_e
+     */
     class MyListener extends PrinterListener.Stub {
         @Override
         public void onError(int error) throws RemoteException {
-            Message msg = new Message();
-            msg.getData().putString("msg", "print error,errno:" + error);
-            handler.sendMessage(msg);
+            if (error == 240) { // finish paper
+                showDialogPrinterError("Paper out, please put new paper in printer and retry print bill!");
+            }
+            else{
+                Message msg = new Message();
+                msg.getData().putString("msg", "print error,errno:" + error);
+                handler.sendMessage(msg);
+            }
         }
 
         @Override
         public void onFinish() throws RemoteException {
+            progressDialog.dismiss();
             setResult(RESULT_OK);
             finish();
         }
+    }
+
+    private void showDialogPrinterError(String text){
+        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setTitle("Printer error!")
+                .setMessage(text)
+                .setCancelable(false)
+                .setPositiveButton("OK", (dialogInterface, i) -> {
+
+                })
+                .setNeutralButton("Retry", (dialog, which) -> {
+                    if(getPrinterStatus())
+                        doPrintString();
+                })
+                .show();
+    }
+
+    private boolean getPrinterStatus(){
+        boolean printerReady = false;
+        try {
+            int status = printer.getStatus();
+            switch (status){
+                case (int) 0x00 : {  // no error
+                   printerReady = true;
+                }break;
+                case (int) 0xF0 : {
+                    showDialogPrinterError("Paper ended, please put new paper in printer and retry print bill!");
+                    printerReady = false;
+                }break;
+                case (int) 0xF3 : {
+                    showDialogPrinterError("Printer overheat!");
+                    printerReady = false;
+                }break;
+                case (int) 0xE1 : {
+                    showDialogPrinterError("Battery is low nivel!");
+                    printerReady = false;
+                }break;
+                case (int) 0xF4 : {
+                    showDialogPrinterError("Paper endendig. Please put new paper!");
+                    printerReady = false;
+                }break;
+                case (int) 0xFB : {
+                    showDialogPrinterError("Moto error in printer!");
+                    printerReady = false;
+                }break;
+                case (int) 0xEE : {
+                    showDialogPrinterError("Paper jam. Please check paper!");
+                    printerReady = false;
+                }break;
+                case (int) 0xF7 : {
+                    showDialogPrinterError("Paper is busy. Please wait!");
+                    printerReady = false;
+                }break;
+                default: printerReady = false;
+            }
+        } catch (RemoteException e) {
+            showDialogPrinterError("Remote exception: " + e.getMessage());
+        }
+
+        return printerReady;
     }
 
     Handler handler = new Handler() {
@@ -644,4 +817,17 @@ public class CountProductActivity extends AppCompatActivity {
 
         }
     };
+
+    private void setAppLocale(String localeCode){
+        Resources resources = getResources();
+        DisplayMetrics dm = resources.getDisplayMetrics();
+        Configuration config = resources.getConfiguration();
+
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN_MR1){
+            config.setLocale(new Locale(localeCode.toLowerCase()));
+        } else {
+            config.locale = new Locale(localeCode.toLowerCase());
+        }
+        resources.updateConfiguration(config, dm);
+    }
 }

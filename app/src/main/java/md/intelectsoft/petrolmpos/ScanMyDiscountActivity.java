@@ -70,8 +70,8 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
     ProgressDialog progressDialog;
     PEServiceAPI peServiceAPI;
 
-    String title = "Please show MyDiscount QR code";
-    String titlePhone = "Position the MyDiscount QR code\nwithin the frame";
+    String title;
+    String titlePhone;
 
     IScanner iScanner;
     ScanMyDiscountActivity activity;
@@ -91,16 +91,18 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         context = this;
         progressDialog = new ProgressDialog(context);
 
+        title = getString(R.string.msg_put_my_discount_title);
+        titlePhone = getString(R.string.msg_position_qr_code);
+
         deviceId = SPFHelp.getInstance().getString("deviceId", "");
         String uri = SPFHelp.getInstance().getString("URI", null);
         peServiceAPI = PERetrofitClient.getPEService(uri);
 
         boolean isDiscount = getIntent().getBooleanExtra("isDisc", false);
 
-
         if(!isDiscount){
-            title = "Please show QR code";
-            titlePhone = "Position the QR code or Barcode\nwithin the frame";
+            title = getString(R.string.please_show_qr);
+            titlePhone = getString(R.string.position_code_barcode);
         }
 
         isVerifone = BaseApp.isVFServiceConnected();
@@ -111,7 +113,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
             iScanner = DeviceHelper.getInstance().getScanner();
 
             Bundle bundle = new Bundle();
-            bundle.putString("topTitleString", "Scanning");
+            bundle.putString("topTitleString", getString(R.string.scanning_verifone_title));
             bundle.putString("upPromptString", title);
 //            bundle.putString("downPromptString", "Please show Bar code");
             bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
@@ -138,13 +140,11 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
                     @Override
                     public void onTimeout() throws RemoteException {
-                        ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
                         finish();
                     }
 
                     @Override
                     public void onCancel() throws RemoteException {
-                        ToastUtil.toastOnUiThread(activity, "Scanning canceled");
                         finish();
                     }
                 });
@@ -162,10 +162,10 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
     private void getCardInfoPEC (String cardId){
         Call<GetCardInfo> call = peServiceAPI.getCardInfoByBarcode(deviceId, cardId);
 
-        progressDialog.setMessage("Load assortment...");
+        progressDialog.setMessage(getString(R.string.load_assortment_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 call.cancel();
@@ -240,14 +240,14 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
                     else{
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                .setTitle("Attention!")
-                                .setMessage("Error check code! Message: " + getCardInfo.getErrorMessage())
+                                .setTitle(getString(R.string.attention_dialog_title))
+                                .setMessage(getString(R.string.error_check_code_msg) + getCardInfo.getErrorMessage())
                                 .setCancelable(false)
-                                .setPositiveButton("OK", (dialogInterface, i) -> {
+                                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                     counter = 0;
                                     if(isVerifone){
                                         Bundle bundle = new Bundle();
-                                        bundle.putString("topTitleString", "Scanning");
+                                        bundle.putString("topTitleString", getString(R.string.scanning_verifone_title));
                                         bundle.putString("upPromptString", title);
                                         bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
 
@@ -267,13 +267,11 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
                                                 @Override
                                                 public void onTimeout() throws RemoteException {
-                                                    ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
                                                     finish();
                                                 }
 
                                                 @Override
                                                 public void onCancel() throws RemoteException {
-                                                    ToastUtil.toastOnUiThread(activity, "Scanning canceled");
                                                     finish();
                                                 }
                                             });
@@ -282,7 +280,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
                                         }
                                     }
                                 })
-                                .setNegativeButton("Retry",((dialogInterface, i) -> {
+                                .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                                     getCardInfoPEC(cardId);
                                 }))
                                 .show();
@@ -291,14 +289,14 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
                 else{
                     progressDialog.dismiss();
                     new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                            .setTitle("Attention!")
-                            .setMessage("Error check code! Response is empty!")
+                            .setTitle(getString(R.string.attention_dialog_title))
+                            .setMessage(getString(R.string.error_check_code_empty))
                             .setCancelable(false)
-                            .setPositiveButton("OK", (dialogInterface, i) -> {
+                            .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                 counter = 0;
                                 if(isVerifone){
                                     Bundle bundle = new Bundle();
-                                    bundle.putString("topTitleString", "Scanning");
+                                    bundle.putString("topTitleString", getString(R.string.scanning_verifone_title));
                                     bundle.putString("upPromptString", title);
                                     bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
 
@@ -318,13 +316,11 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
                                             @Override
                                             public void onTimeout() throws RemoteException {
-                                                ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
                                                 finish();
                                             }
 
                                             @Override
                                             public void onCancel() throws RemoteException {
-                                                ToastUtil.toastOnUiThread(activity, "Scanning canceled");
                                                 finish();
                                             }
                                         });
@@ -333,7 +329,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
                                     }
                                 }
                             })
-                            .setNegativeButton("Retry",((dialogInterface, i) -> {
+                            .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                                 getCardInfoPEC(cardId);
                             }))
                             .show();
@@ -346,14 +342,14 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
             public void onFailure(Call<GetCardInfo> call, Throwable t) {
                 progressDialog.dismiss();
                 new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                        .setTitle("Attention!")
-                        .setMessage("Failure check code! Message: " + t.getMessage())
+                        .setTitle(getString(R.string.attention_dialog_title))
+                        .setMessage(getString(R.string.fail_check_code) + t.getMessage())
                         .setCancelable(false)
-                        .setPositiveButton("OK", (dialogInterface, i) -> {
+                        .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                             counter = 0;
                             if(isVerifone){
                                 Bundle bundle = new Bundle();
-                                bundle.putString("topTitleString", "Scanning");
+                                bundle.putString("topTitleString", getString(R.string.scanning_verifone_title));
                                 bundle.putString("upPromptString", title);
                                 bundle.putBoolean("showScannerBorder", AppParams.getInstance().isShowScanBorder());
 
@@ -373,13 +369,11 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
                                         @Override
                                         public void onTimeout() throws RemoteException {
-                                            ToastUtil.toastOnUiThread(activity, "Scanner is timeout");
                                             finish();
                                         }
 
                                         @Override
                                         public void onCancel() throws RemoteException {
-                                            ToastUtil.toastOnUiThread(activity, "Scanning canceled");
                                             finish();
                                         }
                                     });
@@ -388,7 +382,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
                                 }
                             }
                         })
-                        .setNegativeButton("Retry",((dialogInterface, i) -> {
+                        .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                             getCardInfoPEC(cardId);
                         }))
                         .show();

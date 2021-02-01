@@ -10,6 +10,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
@@ -17,6 +19,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -42,6 +45,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -52,6 +56,7 @@ import java.util.concurrent.RunnableFuture;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import md.intelectsoft.petrolmpos.Utils.LocaleHelper;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.adapters.AdapterCashListDialog;
 import md.intelectsoft.petrolmpos.network.broker.Body.SendRegisterApplication;
@@ -160,6 +165,8 @@ public class AuthorizeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        String lang = LocaleHelper.getLanguage(this);
+        setAppLocale(lang);
         setContentView(R.layout.activity_authorize);
 
         ButterKnife.bind(this);
@@ -218,10 +225,10 @@ public class AuthorizeActivity extends AppCompatActivity {
 
         Call<GetAuthorizeUser> call = peServiceAPI.authorizeUser(codOfUser);
 
-        progressDialog.setMessage("Authorize user...");
+        progressDialog.setMessage(getString(R.string.auth_user_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 call.cancel();
@@ -257,30 +264,40 @@ public class AuthorizeActivity extends AppCompatActivity {
                         SPFHelp.getInstance().putLong("TokenValid", timeValid);
                         SPFHelp.getInstance().putString("TokenId", tokenUser);
                         SPFHelp.getInstance().putString("Owner", user.getName() + userFullName);
+                        SPFHelp.getInstance().putString("OwnerId", user.getUserID());
                         SPFHelp.getInstance().putString("UserCodeAuth", codOfUser);
 
-                        getCashList(tokenUser);
+                        if(SPFHelp.getInstance().getString("CashId", null) == null){
+                            getCashList(tokenUser);
+                        }
+                        else{
+                            if(itemSelected == null){
+                                itemSelected = new CashList();
+                            }
+                            itemSelected.setCashID(SPFHelp.getInstance().getString("CashId",null));
+                            registerDeviceToBack(tokenUser);
+                        }
                     }
                     else
-                        showErrorDialogAuthUser("Error auth user!Message: " + getAuthorizeUser.getErrorMessage());
+                        showErrorDialogAuthUser(getString(R.string.error_auth_user_msg) + getAuthorizeUser.getErrorMessage());
                 }
-                else showErrorDialogAuthUser("Error auth user! Response is empty!");
+                else showErrorDialogAuthUser(getString(R.string.error_auth_user_empty));
             }
 
             @Override
             public void onFailure(Call<GetAuthorizeUser> call, Throwable t) {
                 progressDialog.dismiss();
-                showErrorDialogAuthUser("Error auth user!Message: " + t.getMessage());
+                showErrorDialogAuthUser(getString(R.string.error_auth_user_failure)+ t.getMessage());
             }
         });
     }
 
     private void getCashList(String token) {
         Call<GetCashList> call = peServiceAPI.getCashList(token);
-        progressDialog.setMessage("Obtain cash list..");
+        progressDialog.setMessage(getString(R.string.obtain_cash_list_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", (dialog, which) -> {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), (dialog, which) -> {
             call.cancel();
             if(call.isCanceled())
                 dialog.dismiss();
@@ -302,20 +319,20 @@ public class AuthorizeActivity extends AppCompatActivity {
 
 
                             new MaterialAlertDialogBuilder(context,  R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                    .setTitle("Selectati locul de munca!")
+                                    .setTitle(getString(R.string.select_workplace_title))
                                     .setCancelable(false)
                                     .setSingleChoiceItems(adapter, -1, (dialog, which) -> {
                                         itemSelected = adapter.getItem(which);
                                         Log.e("TAG", "onClick: " + itemSelected.getCashName());
                                     })
-                                    .setPositiveButton("Select", (dialog, which) -> {
+                                    .setPositiveButton(getString(R.string.select_button), (dialog, which) -> {
                                         if(itemSelected != null){
                                             Log.e("TAG", "onClick: " + itemSelected.getCashName());
                                             registerDeviceToBack(SPFHelp.getInstance().getString("TokenId",""));
                                         }
 
                                     })
-                                    .setNegativeButton("Cancel", (dialogInterface, i) -> {
+                                    .setNegativeButton(getString(R.string.cancel_button), (dialogInterface, i) -> {
 
                                     })
                                     .show();
@@ -335,10 +352,10 @@ public class AuthorizeActivity extends AppCompatActivity {
 
         Call<RegisterDevice> call = peServiceAPI.registerDevice(deviceId, "Android " + deviceModel, itemSelected.getCashID(), token);
 
-        progressDialog.setMessage("Register device...");
+        progressDialog.setMessage(getString(R.string.register_device_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", (dialog, which) -> {
+        progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel_button), (dialog, which) -> {
             call.cancel();
             if (call.isCanceled())
                 dialog.dismiss();
@@ -353,36 +370,37 @@ public class AuthorizeActivity extends AppCompatActivity {
                 if(device != null)
                     if(device.getNoError() == 0 && device.getRegistred()){
                         SPFHelp.getInstance().putInt("RegisteredNumber", device.getRegistredNumber());
-                        SPFHelp.getInstance().putString("Cash", itemSelected.getCashName());
-                        SPFHelp.getInstance().putString("StationName", itemSelected.getStationName());
-                        SPFHelp.getInstance().putString("CashId", itemSelected.getCashID());
-
+                        if(SPFHelp.getInstance().getString("CashId", null) == null){
+                            SPFHelp.getInstance().putString("Cash", itemSelected.getCashName());
+                            SPFHelp.getInstance().putString("StationName", itemSelected.getStationName());
+                            SPFHelp.getInstance().putString("CashId", itemSelected.getCashID());
+                        }
                         SPFHelp.getInstance().putBoolean("FirstStart", false);
 
                         startActivity(new Intent(context, MainActivity.class));
                         finish();
                     }
-                    else showErrorDialog("Device not registered! Message: " + device.getErrorMessage());
-                else showErrorDialog("Device not registered! Not response!");
+                    else showErrorDialog(getString(R.string.device_not_registered) + device.getErrorMessage());
+                else showErrorDialog(getString(R.string.device_not_registered_not_response));
             }
 
             @Override
             public void onFailure(Call<RegisterDevice> call, Throwable t) {
                 progressDialog.dismiss();
-                showErrorDialog("Device not registered! Message: " + t.getMessage());
+                showErrorDialog(getString(R.string.device_not_registered_failure) + t.getMessage());
             }
         });
     }
 
     private void showErrorDialog(String text) {
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("Attention!")
+                .setTitle(getString(R.string.attention_dialog_title))
                 .setMessage(text)
                 .setCancelable(false)
-                .setPositiveButton("OK", (dialogInterface, i) -> {
+                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                     finish();
                 })
-                .setNegativeButton("Retry",((dialogInterface, i) -> {
+                .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                     registerDeviceToBack(SPFHelp.getInstance().getString("TokenId",""));
                 }))
                 .show();
@@ -390,10 +408,10 @@ public class AuthorizeActivity extends AppCompatActivity {
 
     private void showErrorDialogAuthUser (String text) {
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("Attention!")
+                .setTitle(getString(R.string.attention_dialog_title))
                 .setMessage(text)
                 .setCancelable(false)
-                .setPositiveButton("OK", (dialogInterface, i) -> {
+                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
 
                 })
                 .show();
@@ -401,7 +419,7 @@ public class AuthorizeActivity extends AppCompatActivity {
 
     private void preparedActivateApp(String activationCode) {
         if(activationCode.equals(""))
-            inputLayoutCode.setError("Input the field!");
+            inputLayoutCode.setError(getString(R.string.please_input_the_field));
         else{
             //data send to register app in broker server
             SendRegisterApplication registerApplication = new SendRegisterApplication();
@@ -425,10 +443,11 @@ public class AuthorizeActivity extends AppCompatActivity {
 
     private void registerApplicationToBroker(SendRegisterApplication registerApplication, String activationCode) {
         Call<RegisterApplication> registerApplicationCall = brokerServiceAPI.registerApplicationCall(registerApplication);
-        progressDialog.setMessage("Register device...");
+
+        progressDialog.setMessage(getString(R.string.register_device_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 registerApplicationCall.cancel();
@@ -445,7 +464,7 @@ public class AuthorizeActivity extends AppCompatActivity {
 
                 if (result == null){
                     progressDialog.dismiss();
-                    Toast.makeText(context, "Response from broker server is null!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, getString(R.string.response_from_broker_is_null), Toast.LENGTH_SHORT).show();
                 }
                 else{
                     if(result.getErrorCode() == 0) {
@@ -480,13 +499,13 @@ public class AuthorizeActivity extends AppCompatActivity {
                         }
                         else{
                             new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                    .setTitle("URL not set!")
-                                    .setMessage("The application is not fully configured.")
+                                    .setTitle(getString(R.string.url_not_set_title))
+                                    .setMessage(getString(R.string.app_not_configured))
                                     .setCancelable(false)
-                                    .setPositiveButton("OK", (dialogInterface, i) -> {
+                                    .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                         finish();
                                     })
-                                    .setNegativeButton("Retry",((dialogInterface, i) -> {
+                                    .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                                         registerApplicationToBroker(registerApplication, activationCode);
                                     }))
                                     .show();
@@ -503,7 +522,7 @@ public class AuthorizeActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<RegisterApplication> call, Throwable t) {
                 progressDialog.dismiss();
-                Toast.makeText(context, "Failure register application: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, getString(R.string.fail_register_app) + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -621,5 +640,18 @@ public class AuthorizeActivity extends AppCompatActivity {
         }
 
         return super.dispatchTouchEvent(event);
+    }
+
+    private void setAppLocale(String localeCode){
+        Resources resources = getResources();
+        DisplayMetrics dm = resources.getDisplayMetrics();
+        Configuration config = resources.getConfiguration();
+
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN_MR1){
+            config.setLocale(new Locale(localeCode.toLowerCase()));
+        } else {
+            config.locale = new Locale(localeCode.toLowerCase());
+        }
+        resources.updateConfiguration(config, dm);
     }
 }

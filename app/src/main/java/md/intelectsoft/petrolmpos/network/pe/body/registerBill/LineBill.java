@@ -3,7 +3,9 @@ package md.intelectsoft.petrolmpos.network.pe.body.registerBill;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class LineBill {
+import io.realm.RealmObject;
+
+public class LineBill extends RealmObject {
     @SerializedName("Count")
     @Expose
     private Double count;

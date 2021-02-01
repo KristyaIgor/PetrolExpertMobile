@@ -9,16 +9,20 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Message;
 import android.os.RemoteException;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -36,10 +40,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import md.intelectsoft.petrolmpos.Utils.LocaleHelper;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolmpos.network.pe.PEServiceAPI;
@@ -91,6 +97,8 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        String lang = LocaleHelper.getLanguage(this);
+        setAppLocale(lang);
         setContentView(R.layout.activity_scan_card_corporativ);
 
         ButterKnife.bind(this);
@@ -115,17 +123,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             try {
 
                 irfCardReader.searchCard(rfSearchListener, 30);
-                progressBarScanCard.setMax(30000);
-                new CountDownTimer(30000, 1) {
-
-                    public void onTick(long millisUntilFinished) {
-                        progressBarScanCard.setProgress((int)millisUntilFinished);
-                    }
-
-                    public void onFinish() {
-
-                    }
-                }.start();
+                startProgressBar();
 
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -134,19 +132,19 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         else{
             nfcAdapter = NfcAdapter.getDefaultAdapter(this);
             if (nfcAdapter == null){
-                Toast.makeText(this, "This device doesn't support NFC.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.device_not_supported_nfc), Toast.LENGTH_LONG).show();
             }
 
             if(!nfcAdapter.isEnabled()){
                 new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                    .setTitle("Attention!")
-                    .setMessage("Turn on the NFC")
+                    .setTitle(getString(R.string.attention_dialog_title))
+                    .setMessage(R.string.turn_on_nfc_msg)
                     .setCancelable(false)
-                    .setPositiveButton("Turn On", (dialogInterface, i) -> {
+                    .setPositiveButton(R.string.turn_on_button, (dialogInterface, i) -> {
                         Intent intent = new Intent(Settings.ACTION_NFC_SETTINGS);
                         startActivity(intent);
                     })
-                    .setNegativeButton("Cancel",((dialogInterface, i) -> {
+                    .setNegativeButton(getString(R.string.cancel_button),((dialogInterface, i) -> {
 
                     }))
                     .show();
@@ -162,11 +160,27 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         }
     }
 
+    private void startProgressBar() {
+        progressBarScanCard.setMax(30000);
+        new CountDownTimer(30000, 1) {
+
+            public void onTick(long millisUntilFinished) {
+                progressBarScanCard.setProgress((int)millisUntilFinished);
+            }
+
+            public void onFinish() {
+                if(!isVerifone)
+                    finish();
+            }
+        }.start();
+    }
+
     RFSearchListener rfSearchListener = new RFSearchListener.Stub() {
         @Override
         public void onCardPass(int cardType) throws RemoteException {
             if (S50_CARD == cardType || S70_CARD == cardType) {
                 Log.e("TAG",  "M1 card @ " + cardType);
+                BaseApp.getApplication().getDeviceService().getBeeper().startBeep(200);
                 readRFData();
             } else if (CPU_CARD == cardType) {
                 Log.e("TAG",  "CPU card");
@@ -375,8 +389,9 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         if(!isVerifone){
             nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
-            if (nfcAdapter != null) {
+            if (nfcAdapter != null && nfcAdapter.isEnabled()) {
                 nfcAdapter.enableForegroundDispatch(this, pendingIntent, writeTagFilters, null);
+                startProgressBar();
             }
         }
     }
@@ -386,10 +401,10 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
 
         Call<GetCardInfo> call = peServiceAPI.getCardInfoByBarcode(deviceId, getMD5HashCardCode(cardId));
 
-        progressDialog.setMessage("Load assortment...");
+        progressDialog.setMessage(getString(R.string.load_assortment_pg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 call.cancel();
@@ -463,13 +478,13 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                     }else{
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                .setTitle("Attention!")
-                                .setMessage("Error check code! Message: " + getCardInfo.getErrorMessage() + ". Error code: " + getCardInfo.getErrorCode())
+                                .setTitle(getString(R.string.attention_dialog_title))
+                                .setMessage(getString(R.string.error_check_code_msg) + getCardInfo.getErrorMessage() + getString(R.string.err_code) + getCardInfo.getErrorCode())
                                 .setCancelable(false)
-                                .setPositiveButton("OK", (dialogInterface, i) -> {
+                                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                   finish();
                                 })
-                                .setNegativeButton("Retry",((dialogInterface, i) -> {
+                                .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                                     getCardInfoPEC(cardId);
                                 }))
                                 .show();
@@ -478,13 +493,13 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                 else{
                     progressDialog.dismiss();
                     new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                            .setTitle("Attention!")
-                            .setMessage("Error check MyDiscount code! Response is empty!")
+                            .setTitle(getString(R.string.attention_dialog_title))
+                            .setMessage(getString(R.string.error_check_my_discount))
                             .setCancelable(false)
-                            .setPositiveButton("OK", (dialogInterface, i) -> {
+                            .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                 finish();
                             })
-                            .setNegativeButton("Retry",((dialogInterface, i) -> {
+                            .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                                 getCardInfoPEC(cardId);
                             }))
                             .show();
@@ -497,13 +512,13 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             public void onFailure(Call<GetCardInfo> call, Throwable t) {
                 progressDialog.dismiss();
                 new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                        .setTitle("Attention!")
-                        .setMessage("Failure check code! Message: " + t.getMessage())
+                        .setTitle(getString(R.string.attention_dialog_title))
+                        .setMessage(getString(R.string.fail_check_code) + t.getMessage())
                         .setCancelable(false)
-                        .setPositiveButton("OK", (dialogInterface, i) -> {
+                        .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                             finish();
                         })
-                        .setNegativeButton("Retry",((dialogInterface, i) -> {
+                        .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                             getCardInfoPEC(cardId);
                         }))
                         .show();
@@ -549,5 +564,16 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         }
     }
 
+    private void setAppLocale(String localeCode){
+        Resources resources = getResources();
+        DisplayMetrics dm = resources.getDisplayMetrics();
+        Configuration config = resources.getConfiguration();
 
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN_MR1){
+            config.setLocale(new Locale(localeCode.toLowerCase()));
+        } else {
+            config.locale = new Locale(localeCode.toLowerCase());
+        }
+        resources.updateConfiguration(config, dm);
+    }
 }

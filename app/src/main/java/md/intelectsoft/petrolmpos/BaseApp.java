@@ -68,7 +68,7 @@ public class BaseApp extends Application {
 
         Realm.init(this);
 
-        RealmConfiguration configuration = new RealmConfiguration.Builder().name("mpos.realm").schemaVersion(2).migration(new RealmMigrations()).build();
+        RealmConfiguration configuration = new RealmConfiguration.Builder().name("mpos.realm").schemaVersion(1).migration(new RealmMigrations()).build();
         Realm.setDefaultConfiguration(configuration);
         Realm.getInstance(configuration);
 
