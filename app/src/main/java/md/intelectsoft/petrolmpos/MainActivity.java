@@ -7,11 +7,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,6 +41,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -48,6 +52,7 @@ import java.util.concurrent.RunnableFuture;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import md.intelectsoft.petrolmpos.Utils.LocaleHelper;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.enums.ShiftStateEnum;
 import md.intelectsoft.petrolmpos.network.broker.Body.SendGetURI;
@@ -76,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.layoutApplyCard) ConstraintLayout layoutApplyCard;
     @BindView(R.id.textTerminalNumber) TextView terminalNumber;
     @BindView(R.id.textOperatorName) TextView terminalUser;
+    @BindView(R.id.textCashWorkPlaceMain) TextView terminalCashName;
 
 
     String androidID, deviceName, publicIp, privateIp, deviceSN, osVersion, deviceModel, deviceId;
@@ -90,115 +96,139 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.buttonScanMyDiscount) void onScanMyDiscount(){
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
-            startActivityForResult(new Intent(context, ScanMyDiscountActivity.class), 122);
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
+            Intent myDisc = new Intent(context,ScanMyDiscountActivity.class);
+            myDisc.putExtra("isDisc", true);
+            startActivityForResult(myDisc, 122);
+        }
         else
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, 221);
     }
 
     @OnClick(R.id.buttonScanWithoutIdentify) void onScanWithoutIdentify(){
-        Call<GetStationSettings> getAssortmentCall = peServiceAPI.getStationSettings(deviceId);
-        progressDialog.setMessage("Load available products...");
-        progressDialog.setCancelable(false);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                getAssortmentCall.cancel();
-                if (getAssortmentCall.isCanceled())
-                    dialog.dismiss();
-            }
-        });
-        progressDialog.show();
+        if(4 + 4 == 5){
+            Call<GetStationSettings> getAssortmentCall = peServiceAPI.getStationSettings(deviceId);
+            progressDialog.setMessage(getString(R.string.load_products_dialot_msg));
+            progressDialog.setCancelable(false);
+            progressDialog.setIndeterminate(true);
+            progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    getAssortmentCall.cancel();
+                    if (getAssortmentCall.isCanceled())
+                        dialog.dismiss();
+                }
+            });
+            progressDialog.show();
 
-        getAssortmentCall.enqueue(new Callback<GetStationSettings>() {
-            @Override
-            public void onResponse(Call<GetStationSettings> call, Response<GetStationSettings> response) {
-                GetStationSettings getAssortment = response.body();
+            getAssortmentCall.enqueue(new Callback<GetStationSettings>() {
+                @Override
+                public void onResponse(Call<GetStationSettings> call, Response<GetStationSettings> response) {
+                    GetStationSettings getAssortment = response.body();
 
-                if(getAssortment != null){
-                    if(getAssortment.getErrorCode() == 0){
-                        if(getAssortment.getAssortment() != null && getAssortment.getAssortment().size() > 0){
+                    if(getAssortment != null){
+                        if(getAssortment.getErrorCode() == 0){
+                            if(getAssortment.getAssortment() != null && getAssortment.getAssortment().size() > 0){
 
-                            List<AssortmentSerializable> listOfProducts = new ArrayList<>();
+                                List<AssortmentSerializable> listOfProducts = new ArrayList<>();
 
-                            for(AssortmentStation item: getAssortment.getAssortment()){
-                                AssortmentSerializable product = new AssortmentSerializable(
-                                        item.getAssortimentID(),
-                                        item.getAssortmentCode(),
-                                        item.getDiscount(),
-                                        item.getName(),
-                                        item.getPrice(),
-                                        item.getPriceLineID());
+                                for(AssortmentStation item: getAssortment.getAssortment()){
+                                    AssortmentSerializable product = new AssortmentSerializable(
+                                            item.getAssortimentID(),
+                                            item.getAssortmentCode(),
+                                            item.getDiscount(),
+                                            item.getName(),
+                                            item.getPrice(),
+                                            item.getPriceLineID());
 
-                                listOfProducts.add(product);
+                                    listOfProducts.add(product);
+                                }
+
+                                progressDialog.dismiss();
+
+                                Intent intent = new Intent(context, ProductsWithoutIndentingActivity.class);
+                                intent.putExtra("ResponseAssortment", (Serializable) listOfProducts);
+                                startActivity(intent);
                             }
-
-                            progressDialog.dismiss();
-
-                            Intent intent = new Intent(context, ProductsWithoutIndentingActivity.class);
-                            intent.putExtra("ResponseAssortment", (Serializable) listOfProducts);
-                            startActivity(intent);
+                            else{
+                                progressDialog.dismiss();
+                                new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                        .setTitle(getString(R.string.attention_dialog_title))
+                                        .setMessage("List of products is empty!")
+                                        .setCancelable(false)
+                                        .setPositiveButton(getString(R.string.ok_button), null)
+                                        .show();
+                            }
                         }
                         else{
                             progressDialog.dismiss();
                             new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                    .setTitle("Attention!")
-                                    .setMessage("List of products is empty!")
+                                    .setTitle(getString(R.string.attention_dialog_title))
+                                    .setMessage("Error load products! Message: " + getAssortment.getErrorMessage() + ". Error code: " + getAssortment.getErrorCode())
                                     .setCancelable(false)
-                                    .setPositiveButton("OK", null)
+                                    .setPositiveButton(getString(R.string.ok_button), null)
                                     .show();
                         }
                     }
                     else{
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                .setTitle("Attention!")
-                                .setMessage("Error load products! Message: " + getAssortment.getErrorMessage() + ". Error code: " + getAssortment.getErrorCode())
+                                .setTitle(getString(R.string.attention_dialog_title))
+                                .setMessage("Error load products! Response is empty!")
                                 .setCancelable(false)
-                                .setPositiveButton("OK", null)
+                                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
+                                })
                                 .show();
                     }
                 }
-                else{
+
+                @Override
+                public void onFailure(Call<GetStationSettings> call, Throwable t) {
                     progressDialog.dismiss();
                     new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                            .setTitle("Attention!")
-                            .setMessage("Error load products! Response is empty!")
+                            .setTitle(getString(R.string.attention_dialog_title))
+                            .setMessage("Failure load products! Message: " + t.getMessage())
                             .setCancelable(false)
-                            .setPositiveButton("OK", (dialogInterface, i) -> {
+                            .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
+
                             })
                             .show();
                 }
-            }
-
-            @Override
-            public void onFailure(Call<GetStationSettings> call, Throwable t) {
-                progressDialog.dismiss();
-                new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                        .setTitle("Attention!")
-                        .setMessage("Failure load products! Message: " + t.getMessage())
-                        .setCancelable(false)
-                        .setPositiveButton("OK", (dialogInterface, i) -> {
-
-                        })
-                        .show();
-            }
-        });
+            });
+        }
     }
 
-    @OnClick(R.id.buttonPrintX) void onPrintX(){
-        printX();
+    @OnClick(R.id.imageButtonLogout) void onPrintX(){
+        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                .setTitle(getString(R.string.attention_dialog_title))
+                .setMessage(getString(R.string.change_user_msg))
+                .setPositiveButton(R.string.yes_btn, (dialogInterface, i) -> {
+                    SPFHelp.getInstance().putLong("TokenValid", 0);
+                    SPFHelp.getInstance().putString("TokenId", null);
+                    SPFHelp.getInstance().putString("Owner", null);
+                    SPFHelp.getInstance().putString("UserCodeAuth", null);
+                    SPFHelp.getInstance().putInt("RegisteredNumber", 0);
+                    SPFHelp.getInstance().putBoolean("FirstStart", true);
+
+                    startActivity(new Intent(context, AuthorizeActivity.class));
+                    finish();
+                })
+                .setNegativeButton(getString(R.string.cancel_button), (dialog, which) -> {
+                    dialog.dismiss();
+                })
+                .show();
     }
 
-    @OnClick(R.id.buttonInfo) void onInfo() {
-        startActivity(new Intent(context, InfoActivity.class));
+    @OnClick(R.id.imageButtonInfo) void onInfo() {
+        startActivityForResult(new Intent(context, InfoActivity.class), 245);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main_v0);
+        String lang = LocaleHelper.getLanguage(this);
+        setAppLocale(lang);
+        setContentView(R.layout.activity_main_v1);
 
         ButterKnife.bind(this);
         ButterKnife.setDebug(true);
@@ -226,11 +256,11 @@ public class MainActivity extends AppCompatActivity {
         long dateNow = new Date().getTime();
         if(tokenValidate < dateNow) authorizeUser(SPFHelp.getInstance().getString("UserCodeAuth", ""));
         else registerDevice();
-
         getShiftInfo();
 
         terminalUser.setText(SPFHelp.getInstance().getString("Owner",""));
-        terminalNumber.setText("Nr: " + SPFHelp.getInstance().getInt("RegisteredNumber",0));
+        terminalCashName.setText(SPFHelp.getInstance().getString("StationName","") + "/" + SPFHelp.getInstance().getString("Cash", ""));
+        terminalNumber.setText(getString(R.string.nr_terminal) + SPFHelp.getInstance().getInt("RegisteredNumber",0));
 
         if(BaseApp.isVFServiceConnected())
             PrinterFonts.initialize(this.getAssets());
@@ -240,10 +270,10 @@ public class MainActivity extends AppCompatActivity {
     private void authorizeUser(String code) {
         Call<GetAuthorizeUser> call = peServiceAPI.authorizeUser(code);
 
-        progressDialog.setMessage("Refresh token...");
+        progressDialog.setMessage(getString(R.string.refresh_token_msg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 call.cancel();
@@ -276,25 +306,25 @@ public class MainActivity extends AppCompatActivity {
                         registerDevice();
                     }
                     else
-                        showErrorDialogAuthUser("Error auth user!Message: " + getAuthorizeUser.getErrorMessage());
+                        showErrorDialogAuthUser(getString(R.string.error_auth_user_msg) + getAuthorizeUser.getErrorMessage());
                 }
-                else showErrorDialogAuthUser("Error auth user! Response is empty!");
+                else showErrorDialogAuthUser(getString(R.string.error_auth_user_empty));
             }
 
             @Override
             public void onFailure(Call<GetAuthorizeUser> call, Throwable t) {
                 progressDialog.dismiss();
-                showErrorDialogAuthUser("Error auth user!Message: " + t.getMessage());
+                showErrorDialogAuthUser(getString(R.string.error_auth_user_failure) + t.getMessage());
             }
         });
     }
 
     private void showErrorDialogAuthUser (String text) {
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("Attention!")
+                .setTitle(getString(R.string.attention_dialog_title))
                 .setMessage(text)
                 .setCancelable(false)
-                .setPositiveButton("OK", (dialogInterface, i) -> {
+                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
 
                 })
                 .show();
@@ -311,13 +341,13 @@ public class MainActivity extends AppCompatActivity {
                     if(getCurrentShift.getErrorCode() == 0){
                         if(getCurrentShift.getShiftState() != ShiftStateEnum.Valid){
                             if(getCurrentShift.getShiftState() == ShiftStateEnum.Closed){
-                                showErrorDialogShiftState("Shift is closed! You can't work! Open shift first.");
+                                showErrorDialogShiftState(getString(R.string.shift_closed_msg));
                             }
                             else if(getCurrentShift.getShiftState() == ShiftStateEnum.Elapsed){
-                                showErrorDialogShiftState("Shift elapsed! You can't work!");
+                                showErrorDialogShiftState(getString(R.string.shift_elapsed_msg));
                             }
                             else{
-                                showErrorDialogShiftState("Can't not work! Shift state: " + getCurrentShift.getShiftState());
+                                showErrorDialogShiftState(getString(R.string.shift_state_msg) + getCurrentShift.getShiftState());
                             }
                         }
                     }
@@ -341,6 +371,12 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("TAG", "onActivityResult: " + barcode );
             }
         }
+        else if( requestCode == 245){
+            if(resultCode == RESULT_FIRST_USER){
+                startActivity(new Intent(this, SplashActivity.class));
+                finish();
+            }
+        }
     }
 
     @Override
@@ -351,8 +387,11 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(new Intent(context, ScannedBarcodeActivity.class), 121);
         }
         if(requestCode == 221){
-            if(permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                startActivityForResult(new Intent(context, ScanMyDiscountActivity.class), 122);
+            if(permissions[0].equals(Manifest.permission.CAMERA) && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                Intent myDisc = new Intent(context,ScanMyDiscountActivity.class);
+                myDisc.putExtra("isDisc", true);
+                startActivityForResult(myDisc, 122);
+            }
         }
     }
 
@@ -385,48 +424,13 @@ public class MainActivity extends AppCompatActivity {
 //        });
 //    }
 
-    private void printX() {
-        Call<SimpleResponse> call = peServiceAPI.printX(deviceId);
-
-        progressDialog.setMessage("Print X report...");
-        progressDialog.setCancelable(false);
-        progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                call.cancel();
-                if (call.isCanceled())
-                    dialog.dismiss();
-            }
-        });
-        progressDialog.show();
-
-        call.enqueue(new Callback<SimpleResponse>() {
-            @Override
-            public void onResponse(Call<SimpleResponse> call, Response<SimpleResponse> response) {
-                progressDialog.dismiss();
-                SimpleResponse device = response.body();
-                if(device != null)
-                    if(device.getNoError()) Toast.makeText(MainActivity.this, "X report printed!", Toast.LENGTH_SHORT).show();
-                    else Toast.makeText(MainActivity.this, "X report not printed! Message: " + device.getErrorMessage(), Toast.LENGTH_SHORT).show();
-                else Toast.makeText(MainActivity.this, "X report not printed! Not response!", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onFailure(Call<SimpleResponse> call, Throwable t) {
-                progressDialog.dismiss();
-                Toast.makeText(MainActivity.this, "X report not printed! Message: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
     private void registerDevice() {
         Call<RegisterDevice> call = peServiceAPI.registerDevice(deviceId, "Android " + deviceModel, SPFHelp.getInstance().getString("CashId",""), SPFHelp.getInstance().getString("TokenId",""));
 
-        progressDialog.setMessage("Check device...");
+        progressDialog.setMessage(getString(R.string.check_device_msg));
         progressDialog.setCancelable(false);
         progressDialog.setIndeterminate(true);
-        progressDialog.setButton(-1, "Cancel", new DialogInterface.OnClickListener() {
+        progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 call.cancel();
@@ -443,30 +447,30 @@ public class MainActivity extends AppCompatActivity {
                 RegisterDevice device = response.body();
                 if(device != null)
                     if(device.getNoError() == 0 && device.getRegistred()){
-                        terminalNumber.setText("Nr: " + device.getRegistredNumber());
+                        terminalNumber.setText(getString(R.string.nr_terminal) + device.getRegistredNumber());
                         SPFHelp.getInstance().putInt("RegisteredNumber", device.getRegistredNumber());
                     }
-                    else showErrorDialogRegisterDevice("Device not registered! Message: " + device.getErrorMessage());
-                else showErrorDialogRegisterDevice("Device not registered! Not response!");
+                    else showErrorDialogRegisterDevice(getString(R.string.device_not_registered) + device.getErrorMessage());
+                else showErrorDialogRegisterDevice(getString(R.string.device_not_registered_not_response));
             }
 
             @Override
             public void onFailure(Call<RegisterDevice> call, Throwable t) {
                 progressDialog.dismiss();
-                showErrorDialogRegisterDevice("Device not registered! Message: " + t.getMessage());
+                showErrorDialogRegisterDevice(getString(R.string.device_not_registered_failure) + t.getMessage());
             }
         });
     }
 
     private void showErrorDialogRegisterDevice(String text) {
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("Attention!")
+                .setTitle(getString(R.string.attention_dialog_title))
                 .setMessage(text)
                 .setCancelable(false)
-                .setPositiveButton("OK", (dialogInterface, i) -> {
+                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                     finish();
                 })
-                .setNegativeButton("Retry",((dialogInterface, i) -> {
+                .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                     registerDevice();
                 }))
                 .show();
@@ -474,10 +478,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void showErrorDialogShiftState(String text) {
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                .setTitle("Attention!")
+                .setTitle(getString(R.string.attention_dialog_title))
                 .setMessage(text)
                 .setCancelable(false)
-                .setPositiveButton("OK", (dialogInterface, i) -> {
+                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                     finish();
                 })
 //                .setNegativeButton("Retry",((dialogInterface, i) -> {
@@ -512,7 +516,7 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call<RegisterApplication> call, Response<RegisterApplication> response) {
                 RegisterApplication result = response.body();
                 if (result == null){
-                    Toast.makeText(context, "Response from broker server is null!", Toast.LENGTH_SHORT).show();
+                    checkApplicationUserAvailable();
                 }
                 else{
                     if(result.getErrorCode() == 0) {
@@ -540,16 +544,17 @@ public class MainActivity extends AppCompatActivity {
                             SPFHelp.getInstance().putString("URI", appDataRegisterApplication.getURI());
                             SPFHelp.getInstance().putLong("DateReceiveURI", nowDate);
                             SPFHelp.getInstance().putLong("ServerDateTime", serverDate);
+                            checkApplicationUserAvailable();
 
                         }else{
                             new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                    .setTitle("URL not set!")
-                                    .setMessage("The application is not fully configured.")
+                                    .setTitle(getString(R.string.url_not_set_title))
+                                    .setMessage(getString(R.string.app_not_configured))
                                     .setCancelable(false)
-                                    .setPositiveButton("OK", (dialogInterface, i) -> {
+                                    .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                         finish();
                                     })
-                                    .setNegativeButton("Retry",((dialogInterface, i) -> {
+                                    .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
                                         getURI(licenseID);
                                     }))
                                     .show();
@@ -562,15 +567,16 @@ public class MainActivity extends AppCompatActivity {
                         licenseData.put("LicenseCode", null);
                         licenseData.put("CompanyName", null);
                         licenseData.put("CompanyIDNO", null);
+                        SPFHelp.getInstance().putString("CashId", null);
 
                         SPFHelp.getInstance().putStrings(licenseData);
                         SPFHelp.getInstance().putBoolean("KeepMeSigned", false);
 
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                .setTitle("Application not activated!")
-                                .setMessage("The application is not activated! Please activate it can you continue.")
+                                .setTitle(getString(R.string.app_not_activated))
+                                .setMessage(getString(R.string.aplication_not_activated_msg))
                                 .setCancelable(false)
-                                .setPositiveButton("OK", (dialogInterface, i) -> {
+                                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                     finish();
                                 })
                                 .show();
@@ -581,14 +587,15 @@ public class MainActivity extends AppCompatActivity {
                         licenseData.put("LicenseCode", null);
                         licenseData.put("CompanyName", null);
                         licenseData.put("CompanyIDNO", null);
+                        SPFHelp.getInstance().putString("CashId", null);
 
                         SPFHelp.getInstance().putStrings(licenseData);
 
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                .setTitle("License not activated!")
-                                .setMessage("The license for this application not activated! Please activate it can you continue.")
+                                .setTitle(getString(R.string.license_not_activated))
+                                .setMessage(getString(R.string.license_not_active_msg))
                                 .setCancelable(false)
-                                .setPositiveButton("OK", (dialogInterface, i) -> {
+                                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                     startActivity(new Intent(context, AuthorizeActivity.class));
                                     finish();
                                 })
@@ -600,22 +607,23 @@ public class MainActivity extends AppCompatActivity {
                         licenseData.put("LicenseCode", null);
                         licenseData.put("CompanyName", null);
                         licenseData.put("CompanyIDNO", null);
+                        SPFHelp.getInstance().putString("CashId", null);
 
                         SPFHelp.getInstance().putStrings(licenseData);
 
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
-                                .setTitle("License not exist!")
-                                .setMessage("The license for this application not exist! Please enter valid license can continue.")
+                                .setTitle(getString(R.string.license_not_exist))
+                                .setMessage(getString(R.string.license_not_exist_msg))
                                 .setCancelable(false)
-                                .setPositiveButton("OK", (dialogInterface, i) -> {
+                                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                     startActivity(new Intent(context, AuthorizeActivity.class));
                                     finish();
                                 })
                                 .show();
                     }
-
                     else {
                         Toast.makeText(context, result.getErrorMessage(), Toast.LENGTH_SHORT).show();
+                        checkApplicationUserAvailable();
                     }
                 }
             }
@@ -623,8 +631,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<RegisterApplication> call, Throwable t) {
                 Toast.makeText(context, t.getMessage(), Toast.LENGTH_SHORT).show();
+                checkApplicationUserAvailable();
             }
         });
+    }
+
+    private void checkApplicationUserAvailable() {
+        //TODO check app id can work if not response from broker service
+
     }
 
     private String getIPAddress(boolean useIPv4) {
@@ -723,5 +737,18 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return result;
+    }
+
+    private void setAppLocale(String localeCode){
+        Resources resources = getResources();
+        DisplayMetrics dm = resources.getDisplayMetrics();
+        Configuration config = resources.getConfiguration();
+
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN_MR1){
+            config.setLocale(new Locale(localeCode.toLowerCase()));
+        } else {
+            config.locale = new Locale(localeCode.toLowerCase());
+        }
+        resources.updateConfiguration(config, dm);
     }
 }

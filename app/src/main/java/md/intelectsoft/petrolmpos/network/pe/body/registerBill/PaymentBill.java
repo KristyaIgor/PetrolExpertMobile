@@ -3,7 +3,9 @@ package md.intelectsoft.petrolmpos.network.pe.body.registerBill;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
-public class PaymentBill {
+import io.realm.RealmObject;
+
+public class PaymentBill extends RealmObject {
     @SerializedName("PaymentCode")
     @Expose
     private Integer paymentCode;

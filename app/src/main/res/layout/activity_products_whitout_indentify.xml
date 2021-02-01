@@ -34,7 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:fontFamily="@font/poppins_medium"
-        android:text="Alege un produs"
+        android:text="@string/alege_un_produs"
         android:textColor="@color/white"
         android:textSize="20sp"
         android:textStyle="bold"

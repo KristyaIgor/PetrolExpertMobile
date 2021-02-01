@@ -1,11 +1,13 @@
 package md.intelectsoft.petrolmpos;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
@@ -28,11 +30,13 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.realm.Realm;
+import io.realm.RealmResults;
 import md.intelectsoft.petrolmpos.Utils.LocaleHelper;
 import md.intelectsoft.petrolmpos.Utils.SPFHelp;
 import md.intelectsoft.petrolmpos.network.broker.BrokerRetrofitClient;
 import md.intelectsoft.petrolmpos.network.broker.BrokerServiceAPI;
 import md.intelectsoft.petrolmpos.network.pe.body.SetFiscalBody;
+import md.intelectsoft.petrolmpos.network.pe.body.registerBill.BillRegistered;
 import md.intelectsoft.petrolmpos.network.pe.result.SetFiscal;
 import md.intelectsoft.petrolmpos.realm.FiscalKey;
 import retrofit2.Call;
@@ -53,6 +57,13 @@ public class InfoActivity extends AppCompatActivity {
     @BindView(R.id.langEnButton) RadioButton langEN;
     @BindView(R.id.langRoButton) RadioButton langRO;
     @BindView(R.id.langRuButton) RadioButton langRU;
+
+    @BindView(R.id.textBillCounter) TextView billCounter;
+
+
+    @OnClick(R.id.layoutCountOfBill) void showBills(){
+        startActivity(new Intent(this, BillListActivity.class));
+    }
 
     @OnClick(R.id.imageBackToMain) void onBack(){
         finish();
@@ -120,6 +131,8 @@ public class InfoActivity extends AppCompatActivity {
                 langRO.setChecked(false);
                 langRU.setChecked(false);
                 LocaleHelper.setLocale(this, "en");
+                setResult(RESULT_FIRST_USER);
+                finish();
             }
         });
         langRO.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -127,6 +140,8 @@ public class InfoActivity extends AppCompatActivity {
                 langEN.setChecked(false);
                 langRU.setChecked(false);
                 LocaleHelper.setLocale(this, "ro");
+                setResult(RESULT_FIRST_USER);
+                finish();
             }
         });
         langRU.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -134,12 +149,19 @@ public class InfoActivity extends AppCompatActivity {
                 langEN.setChecked(false);
                 langRO.setChecked(false);
                 LocaleHelper.setLocale(this, "ru");
+                setResult(RESULT_FIRST_USER);
+                finish();
             }
         });
 
         setAsFiscal.setOnClickListener(v -> {
             setAsFiscalDevice();
         });
+
+        RealmResults<BillRegistered> bils = Realm.getDefaultInstance().where(BillRegistered.class).findAll();
+        if(!bils.isEmpty())
+            billCounter.setText(String.valueOf(bils.size()));
+
     }
 
     private void setAsFiscalDevice(){

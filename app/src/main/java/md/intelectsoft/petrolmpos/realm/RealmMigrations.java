@@ -12,10 +12,10 @@ public class RealmMigrations implements RealmMigration {
     public void migrate(DynamicRealm realm, long oldVersion, long newVersion) {
         final RealmSchema schema = realm.getSchema();
         if(oldVersion == 1){
-            schema.create("FiscalKey");
-            schema.get("FiscalKey")
-                    .addField("key",byte[].class);
-            oldVersion++;
+//            schema.create("FiscalKey");
+//            schema.get("FiscalKey")
+//                    .addField("key",byte[].class);
+//            oldVersion++;
         }
     }
 }

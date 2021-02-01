@@ -57,8 +57,8 @@ public class AssortmentCardAdapter extends ArrayAdapter<AssortmentCardSerializab
         AssortmentCardSerializable item = getItem(position);
 
         viewHolder.productName.setText(item.getName());
-        viewHolder.productPrice.setText(item.getPrice() + " MDL");
-        viewHolder.productCount.setText(String.format("%.2f", item.getDailyLimit() - item.getDailyLimitConsumed()).replace(",","."));
+        viewHolder.productPrice.setText(String.format("%.2f",item.getPrice()).replace(",",".") + " MDL");
+//        viewHolder.productCount.setText(String.format("%.2f", item.getDailyLimit() - item.getDailyLimitConsumed()).replace(",","."));
 
         return convertView;
     }
