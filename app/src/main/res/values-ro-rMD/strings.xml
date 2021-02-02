@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="welcome_npetrol_mpos">Bun venit\nPetrol-MPOS</string>
+    <string name="app_name">PetrolExpert</string>
+    <string name="welcome_npetrol_mpos">Bun venit\nPetrolExpert</string>
     <string name="please_input_the_field">Vă rugăm să introduceți câmpul!</string>
     <string name="activation_code">Cod de activare</string>
     <string name="activate">Activare</string>
-    <string name="pentru_a_continua_setarea_aplicatiei_introduceti_codul_personal">Pentru a continua setarea aplicatiei introduceti codul personal!</string>
-    <string name="petrol_mpos">Petrol - MPOS</string>
+    <string name="pentru_a_continua_setarea_aplicatiei_introduceti_codul_personal">Pentru a continua folosirea aplicatiei introduceti codul personal!</string>
+    <string name="petrol_mpos">PetrolExpert</string>
     <string name="autentificare_btn">Autentificare</string>
-    <string name="suma_disponibila">Suma disponibila:</string>
+    <string name="suma_disponibila">Balanta:</string>
     <string name="zi_limit">Zi</string>
     <string name="saptamina_limit">Saptamina</string>
     <string name="luna_limit">Luna</string>
@@ -84,4 +85,21 @@
     <string name="bills_activity">Conturile</string>
     <string name="change_user_msg">Sunteti sigur ca doriti sa schimbati utilizatorul?</string>
     <string name="yes_btn">Schimba</string>
+    <string name="disponibil_client_card">Disponibil</string>
+    <string name="existnewversion">"Exista o versiune noua: "</string>
+    <string name="curentversion">". Versiunea curenta: "</string>
+    <string name="youwantupdate">!Doriti sa actualizati aplicatia?</string>
+    <string name="this_latest_version">Instalata ultiam versiune!</string>
+    <string name="diagnostic_report_send">Raportul informativ trimis!</string>
+    <string name="last_send">"Ultima trimitere: "</string>
+    <string name="report_not_send">"Raportul informativ nu a fost trimis! Mesaj: "</string>
+    <string name="nevery">" niciodata"</string>
+    <string name="version">"Versiune: "</string>
+    <string name="download_new_version">Descarcare versiune noua...</string>
+    <string name="petrol_update">Actualizare PetrolExpert</string>
+    <string name="diagnostic_info">Raport informativ</string>
+    <string name="app_info">Versiune aplicatie</string>
+    <string name="suma_cecului_mare_ca_la_client">Valoarea cecului este mai mare decât suma disponibilă a clientului! Ați depășit cu:</string>
+    <string name="limita_zi_intrecuta">Limita zilnică depășită! Ați depășit cu:</string>
+    <string name="mai_mult_toplivo_ca_la_client_disponibil">Ați introdus mai mult combustibil decât clientul are disponibil! Ați depășit cu:</string>
 </resources>

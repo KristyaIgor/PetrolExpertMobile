@@ -1,12 +1,5 @@
 <resources>
-    <string name="app_name">Petrol MPOS</string>
-    <string name="title_activity_setting">SettingActivity</string>
-    <string name="tab_text_1">Conectare</string>
-    <string name="tab_text_2">Altele</string>
-    <string name="tab_text_3">Tab 3</string>
-    <string name="action_settings">Settings</string>
-    <string name="section_format">Hello World from section: %1$d</string>
-
+    <string name="app_name">PetrolExpert</string>
 
     <!-- Verifone string data -->
 
@@ -196,14 +189,14 @@
     <string name="prn_comment1">"I ACKNOWLEDGE SATISFACTORY RECEIPT OF"</string>
     <string name="prn_comment2">"RELATIVE GOODS/SERVICE"</string>
     <string name="prn_comment3">""</string>
-    <string name="welcome_npetrol_mpos">Bun venit\nPetrol-MPOS</string>
+    <string name="welcome_npetrol_mpos">Bun venit\nPetrolExpert</string>
     <string name="please_input_the_field">Vă rugăm să introduceți câmpul!</string>
     <string name="activation_code">Cod de activare</string>
     <string name="activate">Activare</string>
-    <string name="pentru_a_continua_setarea_aplicatiei_introduceti_codul_personal">Pentru a continua setarea aplicatiei introduceti codul personal!</string>
-    <string name="petrol_mpos">Petrol - MPOS</string>
+    <string name="pentru_a_continua_setarea_aplicatiei_introduceti_codul_personal">Pentru a continua folosirea aplicatiei introduceti codul personal!</string>
+    <string name="petrol_mpos">PetrolExpert</string>
     <string name="autentificare_btn">Autentificare</string>
-    <string name="suma_disponibila">Suma disponibila:</string>
+    <string name="suma_disponibila">Balanta:</string>
     <string name="zi_limit">Zi</string>
     <string name="saptamina_limit">Saptamina</string>
     <string name="luna_limit">Luna</string>
@@ -280,4 +273,21 @@
     <string name="bills_activity">Conturile</string>
     <string name="change_user_msg">Sunteti sigur ca doriti sa schimbati utilizatorul?</string>
     <string name="yes_btn">Schimba</string>
+    <string name="disponibil_client_card">Disponibil</string>
+    <string name="existnewversion">"Exista o versiune noua: "</string>
+    <string name="curentversion">". Versiunea curenta: "</string>
+    <string name="youwantupdate">!Doriti sa actualizati aplicatia?</string>
+    <string name="this_latest_version">This is latest version!</string>
+    <string name="diagnostic_report_send">Diagnostic report send!</string>
+    <string name="last_send">\"Last send: \"</string>
+    <string name="report_not_send">\"Diagnostic report not send!Message: \"</string>
+    <string name="nevery">\" nevery\"</string>
+    <string name="version">\"Version: \"</string>
+    <string name="download_new_version">Download new version...</string>
+    <string name="petrol_update">PetrolExpert update</string>
+    <string name="diagnostic_info">Diagnostic info</string>
+    <string name="app_info">App info</string>
+    <string name="suma_cecului_mare_ca_la_client">Valoarea cecului este mai mare decât suma disponibilă a clientului! Ați depășit cu:</string>
+    <string name="limita_zi_intrecuta">\"Первышен дневной лимит! Вы превысели на: \"</string>
+    <string name="mai_mult_toplivo_ca_la_client_disponibil">Ați introdus mai mult combustibil decât clientul are disponibil! Ați depășit cu:</string>
 </resources>

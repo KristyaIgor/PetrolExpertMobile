@@ -25,7 +25,8 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_close_icon" />
+            app:srcCompat="@drawable/ic_close_icon"
+            app:tint="@color/newGreen" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ImageView
@@ -93,7 +94,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:max="30"
-        android:progressTint="@color/blueLight"
+        android:progressTint="@color/newGreenLightLight"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView25" />

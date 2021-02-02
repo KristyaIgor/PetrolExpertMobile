@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "251402443714",
+    "project_id": "petrolexpert-c98e8",
+    "storage_bucket": "petrolexpert-c98e8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251402443714:android:2a2f13fb4961207c8e145b",
+        "android_client_info": {
+          "package_name": "md.intelectsoft.petrolexpert"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "251402443714-3056ttkq4r8csn49n3pv3s0jalktcdla.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "md.intelectsoft.petrolexpert",
+            "certificate_hash": "54b893a85754ef5a23ba682fb3c4e819ce9ecbd0"
+          }
+        },
+        {
+          "client_id": "251402443714-rs8fsj0vf6i74bu6c2cnpm6478ffcvep.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBP0K-XFHVEhbeL2NTVQjCUfqrrB3Tve-8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "251402443714-rs8fsj0vf6i74bu6c2cnpm6478ffcvep.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -109,7 +109,7 @@
             android:layout_marginTop="8dp"
             android:fontFamily="@font/poppins"
             android:text="Nr: -"
-            android:textColor="@color/black"
+            android:textColor="@color/newGreen"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -121,8 +121,9 @@
             android:fontFamily="@font/poppins"
             android:gravity="right|center_vertical"
             android:text="-"
-            android:textColor="@color/black"
+            android:textColor="@color/newGreen"
             android:textSize="24sp"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="@+id/imageUserMain"
             app:layout_constraintStart_toStartOf="@+id/imageUserMain"
             app:layout_constraintTop_toBottomOf="@+id/imageUserMain" />
@@ -269,7 +270,7 @@
             android:layout_marginEnd="8dp"
             android:background="@android:color/transparent"
             android:scaleType="centerCrop"
-            android:tint="#0B4A8F"
+            android:tint="@color/newGreen"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/icon_info" />
@@ -281,14 +282,14 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/imageButtonInfo"
-            app:srcCompat="@drawable/elipse_splash" />
+            app:srcCompat="@drawable/ic_launcher_application_start_activity" />
 
         <TextView
             android:id="@+id/textCashWorkPlaceMain"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="TextView"
-            android:textColor="#B3000000"
+            android:textColor="#B3076733"
             android:textSize="18sp"
             app:layout_constraintBottom_toTopOf="@+id/buttonScanCardCorporativ"
             app:layout_constraintEnd_toEndOf="@+id/imageUserMain"
