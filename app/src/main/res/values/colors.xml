@@ -363,4 +363,10 @@
     <color name="colorWhite">#FFFFFF</color>
     <color name="colorDivider">#BEBEBE</color>
     <color name="colorGreen">#85ca33</color>
+
+<!--    new color design-->
+
+    <color name="newGreen">#076733</color>
+    <color name="newGreenLight">#8EBC1F</color>
+    <color name="newGreenLightLight">#C3F35B</color>
 </resources>

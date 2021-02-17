@@ -16,6 +16,7 @@
         android:layout_marginBottom="16dp"
         android:background="@drawable/bacground_button_gradient"
         android:text="@string/achita_btn"
+        android:textAllCaps="false"
         android:textColor="@color/white"
         android:textSize="18sp"
         android:visibility="visible"
@@ -23,7 +24,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <md.intelectsoft.petrolmpos.models.ToggleButton
+    <md.intelectsoft.petrolexpert.models.ToggleButton
         android:id="@+id/toggleQuantityOrSum"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -32,9 +33,8 @@
         app:ctg_addLeftIcon="@drawable/mdl"
         app:ctg_addRightIcon="@drawable/litri"
         app:ctg_addSlideBackgroundColor="@android:color/transparent"
-        app:ctg_addSlideColor="#0196AF"
+        app:ctg_addSlideColor="@color/newGreenLight"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/divider9" />
 
@@ -43,7 +43,7 @@
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginTop="16dp"
-        android:background="#8021DEFE"
+        android:background="@color/newGreenLightLight"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -54,7 +54,7 @@
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_marginTop="20dp"
-        android:background="#8021DEFE"
+        android:background="@color/newGreenLightLight"
         app:layout_constraintBottom_toTopOf="@id/textButtonCount2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
@@ -67,7 +67,7 @@
         android:id="@+id/divider12"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="#8021DEFE"
+        android:background="@color/newGreenLightLight"
         app:layout_constraintBottom_toTopOf="@id/textButtonCount0"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -78,7 +78,7 @@
         android:id="@+id/divider13"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="#8021DEFE"
+        android:background="@color/newGreenLightLight"
         app:layout_constraintBottom_toTopOf="@+id/textButtonCount8"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -88,7 +88,7 @@
         android:id="@+id/divider14"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:background="#8021DEFE"
+        android:background="@color/newGreenLightLight"
         app:layout_constraintBottom_toTopOf="@+id/textButtonCount5"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
@@ -137,14 +137,26 @@
         android:id="@+id/textCountProductPrice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
         android:text="0.00 MDL"
         android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="@+id/imageCancelCount"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="@+id/textCountProductName"
+        app:layout_constraintEnd_toStartOf="@+id/textProductDiscountMDL"
         app:layout_constraintStart_toEndOf="@+id/textCountProductName"
-        app:layout_constraintTop_toTopOf="@+id/imageCancelCount" />
+        app:layout_constraintTop_toTopOf="@+id/textCountProductName" />
+
+    <TextView
+        android:id="@+id/textProductDiscountMDL"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:paddingStart="8dp"
+        android:text="0.00 MDL"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="@+id/textCountProductName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textCountProductName" />
 
     <TextView
         android:id="@+id/textTitleCountSum"

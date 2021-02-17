@@ -1,2 +1,3 @@
+include ':emvcardreader'
 include ':app'
-rootProject.name = "PetrolMPOS"
+rootProject.name = "PetrolExpert"

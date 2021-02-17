@@ -39,7 +39,7 @@
             app:errorTextColor="@color/red"
             app:hintAnimationEnabled="true"
             app:hintEnabled="true"
-            app:hintTextColor="@color/blueLight"
+            app:hintTextColor="@color/white"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textView6"
@@ -65,7 +65,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textView4"
-            app:srcCompat="@drawable/authorize_icon" />
+            app:srcCompat="@drawable/ic_launcher_application_start_activity" />
 
         <TextView
             android:id="@+id/textView4"
@@ -107,6 +107,7 @@
             android:background="@drawable/bacground_button_gradient"
             android:backgroundTintMode="add"
             android:text="@string/activate"
+            android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -133,6 +134,7 @@
             android:layout_marginBottom="16dp"
             android:background="@drawable/bacground_button_gradient"
             android:text="@string/autentificare_btn"
+            android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"

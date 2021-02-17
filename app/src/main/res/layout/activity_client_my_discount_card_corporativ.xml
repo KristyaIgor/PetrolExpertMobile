@@ -18,17 +18,45 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0">
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraintLayout"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@color/white"
+            android:translationZ="-5dp"
+            app:layout_constraintBottom_toTopOf="@+id/textView39"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0">
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
         <TextView
             android:id="@+id/textRemainLimitWeekly"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:text=" 0 MDL"
-            android:textColor="#55FF16"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toEndOf="@+id/textView28"
-            app:layout_constraintStart_toStartOf="@+id/textView28"
-            app:layout_constraintTop_toBottomOf="@+id/divider5" />
+            android:textColor="?attr/colorPrimaryDark"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@+id/textDisponibilForCard8"
+            app:layout_constraintStart_toStartOf="@+id/textDisponibilForCard8"
+            app:layout_constraintTop_toBottomOf="@+id/textRemainLimitDaily" />
+
+        <TextView
+            android:id="@+id/textDisponibilForCard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/disponibil_client_card"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="@+id/textDisponibilForCard8"
+            app:layout_constraintStart_toStartOf="@+id/textDisponibilForCard8"
+            app:layout_constraintTop_toBottomOf="@+id/constraintLayout2" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layoutCloseClientInfoActivity"
@@ -48,19 +76,30 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/ic_close_icon" />
+                app:srcCompat="@drawable/ic_close_icon"
+                app:tint="@color/newGreen"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <View
-            android:id="@+id/divider5"
+            android:id="@+id/divider16"
             android:layout_width="0dp"
             android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:background="#8021DEFE"
+            android:background="@color/newGreenLightLight"
             android:visibility="visible"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textClientLimitWeek" />
+            app:layout_constraintTop_toBottomOf="@+id/textDisponibilForCard" />
+
+        <View
+            android:id="@+id/divider2"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="@color/newGreenLightLight"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textRemainLimitWeekly" />
 
         <TextView
             android:id="@+id/textClientCardName"
@@ -71,7 +110,7 @@
             android:layout_marginEnd="16dp"
             android:gravity="center"
             android:text="TextView"
-            android:textColor="@color/white"
+            android:textColor="@color/black"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -79,16 +118,16 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/textView28"
+            android:id="@+id/textDisponibilForCard8"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/saptamina_limit"
             android:textAlignment="center"
-            android:textColor="@color/white"
+            android:textColor="#D0000000"
             app:layout_constraintEnd_toStartOf="@+id/textView35"
             app:layout_constraintStart_toEndOf="@+id/textView34"
-            app:layout_constraintTop_toBottomOf="@+id/constraintLayout2" />
+            app:layout_constraintTop_toBottomOf="@+id/divider2" />
 
         <TextView
             android:id="@+id/textView34"
@@ -96,10 +135,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/zi_limit"
-            android:textColor="@color/white"
-            app:layout_constraintEnd_toStartOf="@+id/textView28"
+            android:textColor="#D0000000"
+            app:layout_constraintEnd_toStartOf="@+id/textDisponibilForCard8"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/constraintLayout2" />
+            app:layout_constraintTop_toBottomOf="@+id/divider2" />
 
         <TextView
             android:id="@+id/textView35"
@@ -107,61 +146,62 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/luna_limit"
-            android:textColor="@color/white"
+            android:textColor="#D0000000"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/textView28"
-            app:layout_constraintTop_toBottomOf="@+id/constraintLayout2" />
+            app:layout_constraintStart_toEndOf="@+id/textDisponibilForCard8"
+            app:layout_constraintTop_toBottomOf="@+id/divider2" />
 
         <TextView
             android:id="@+id/textClientLimitWeek"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="4dp"
             android:text="0 MDL"
-            android:textColor="@color/white"
+            android:textColor="@color/darkslategray"
             android:textSize="18sp"
-            app:layout_constraintEnd_toEndOf="@+id/textView28"
-            app:layout_constraintStart_toStartOf="@+id/textView28"
-            app:layout_constraintTop_toBottomOf="@+id/textView28" />
+            app:layout_constraintEnd_toEndOf="@+id/textDisponibilForCard8"
+            app:layout_constraintStart_toStartOf="@+id/textDisponibilForCard8"
+            app:layout_constraintTop_toBottomOf="@+id/textDisponibilForCard8" />
 
         <TextView
             android:id="@+id/textClientLimitDay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="4dp"
             android:text="0 MDL"
-            android:textColor="@color/white"
+            android:textColor="@color/darkslategray"
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="@+id/textView34"
             app:layout_constraintStart_toStartOf="@+id/textView34"
-            app:layout_constraintTop_toBottomOf="@+id/textView28" />
+            app:layout_constraintTop_toBottomOf="@+id/textDisponibilForCard8" />
 
         <TextView
             android:id="@+id/textClientLimitMonth"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="4dp"
             android:text="0 MDL"
-            android:textColor="@color/white"
+            android:textColor="@color/darkslategray"
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="@+id/textView35"
             app:layout_constraintStart_toStartOf="@+id/textView35"
-            app:layout_constraintTop_toBottomOf="@+id/textView28" />
+            app:layout_constraintTop_toBottomOf="@+id/textDisponibilForCard8" />
 
         <TextView
             android:id="@+id/textView39"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:background="@color/startButtonGradient"
+            android:background="?attr/colorPrimaryDark"
             android:gravity="center"
             android:text="@string/produse_disponibile"
             android:textColor="@color/white"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textRemainLimitWeekly" />
+            app:layout_constraintTop_toBottomOf="@+id/textClientLimitWeek" />
 
         <ListView
             android:id="@+id/listOfAvailableProducts"
@@ -169,7 +209,7 @@
             android:layout_height="0dp"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
-            android:divider="#99858585"
+            android:divider="@color/newGreenLightLight"
             android:dividerHeight="1dp"
             app:layout_constraintBottom_toTopOf="@+id/layoutCloseClientInfoActivity"
             app:layout_constraintEnd_toEndOf="parent"
@@ -181,8 +221,7 @@
             android:id="@+id/constraintLayout2"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@color/startButtonGradient"
+            android:layout_marginTop="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textClientCardName">
@@ -193,7 +232,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="@string/suma_disponibila"
-                android:textColor="@color/white"
+                android:textColor="@color/black"
                 android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -205,9 +244,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:gravity="right|center_horizontal"
-                android:text="15.00 MDL"
-                android:textColor="@color/button_color"
-                android:textSize="18sp"
+                android:text="15.00"
+                android:textColor="@color/black"
+                android:textSize="24sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -221,11 +260,12 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="0 MDL"
-            android:textColor="#55FF16"
-            android:textSize="16sp"
+            android:textColor="?attr/colorPrimaryDark"
+            android:textSize="22sp"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="@+id/textView34"
             app:layout_constraintStart_toStartOf="@+id/textView34"
-            app:layout_constraintTop_toBottomOf="@+id/divider5" />
+            app:layout_constraintTop_toBottomOf="@+id/divider16" />
 
         <TextView
             android:id="@+id/textRemainLimitMonthly"
@@ -233,10 +273,12 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="0 MDL"
-            android:textColor="#55FF16"
-            android:textSize="16sp"
+            android:textColor="?attr/colorPrimaryDark"
+            android:textSize="22sp"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="@+id/textView35"
             app:layout_constraintStart_toStartOf="@+id/textView35"
-            app:layout_constraintTop_toBottomOf="@+id/divider5" />
+            app:layout_constraintTop_toBottomOf="@+id/divider16" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
