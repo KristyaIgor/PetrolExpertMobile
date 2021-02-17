@@ -102,4 +102,5 @@
     <string name="suma_cecului_mare_ca_la_client">The value of the check is higher than the customer\'s available amount! You have exceeded with:</string>
     <string name="limita_zi_intrecuta">Daily limit exceeded! You have exceeded with:</string>
     <string name="mai_mult_toplivo_ca_la_client_disponibil">You have introduced more fuel than the customer has available! You have exceeded with:</string>
+    <string name="ops_failure_get_cash_list">"Ops! Failure get cash list: "</string>
 </resources>

@@ -23,7 +23,7 @@ public class BillRegistered extends RealmObject {
     private RealmList<PaymentBill> paymentBills;
     @SerializedName("Validate")
     @Expose
-    private boolean validate = true;
+    private boolean validate;
 
     //save field local storage
     private long date;
@@ -32,6 +32,13 @@ public class BillRegistered extends RealmObject {
     private String cashId;
     private String cashName;
     private String stationName;
+    private int globalNumberNeFisc;
+    private int globalNumberFisc;
+    private int shiftNumber;
+    private boolean isFiscal;
+    private String externId;
+    private String shiftId;
+    private int backGlobalNumber;
 
     public String getClientCardCode() {
         return clientCardCode;
@@ -111,5 +118,69 @@ public class BillRegistered extends RealmObject {
 
     public void setStationName(String stationName) {
         this.stationName = stationName;
+    }
+
+    public int getGlobalNumberNeFisc() {
+        return globalNumberNeFisc;
+    }
+
+    public void setGlobalNumberNeFisc(int globalNumberNeFisc) {
+        this.globalNumberNeFisc = globalNumberNeFisc;
+    }
+
+    public int getGlobalNumberFisc() {
+        return globalNumberFisc;
+    }
+
+    public void setGlobalNumberFisc(int globalNumberFisc) {
+        this.globalNumberFisc = globalNumberFisc;
+    }
+
+    public boolean isFiscal() {
+        return isFiscal;
+    }
+
+    public void setFiscal(boolean fiscal) {
+        isFiscal = fiscal;
+    }
+
+    public int getShiftNumber() {
+        return shiftNumber;
+    }
+
+    public void setShiftNumber(int shiftNumber) {
+        this.shiftNumber = shiftNumber;
+    }
+
+    public String getExternId() {
+        return externId;
+    }
+
+    public void setExternId(String externId) {
+        this.externId = externId;
+    }
+
+    public String getShiftId() {
+        return shiftId;
+    }
+
+    public void setShiftId(String shiftId) {
+        this.shiftId = shiftId;
+    }
+
+    public int getBackGlobalNumber() {
+        return backGlobalNumber;
+    }
+
+    public void setBackGlobalNumber(int backGlobalNumber) {
+        this.backGlobalNumber = backGlobalNumber;
+    }
+
+    public boolean isValidate() {
+        return validate;
+    }
+
+    public void setValidate(boolean validate) {
+        this.validate = validate;
     }
 }

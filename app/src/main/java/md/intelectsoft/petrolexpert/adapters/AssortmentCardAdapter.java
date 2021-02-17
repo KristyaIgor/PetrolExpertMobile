@@ -1,6 +1,7 @@
 package md.intelectsoft.petrolexpert.adapters;
 
 import android.content.Context;
+import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,8 @@ import java.util.List;
 
 import md.intelectsoft.petrolexpert.R;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentCardSerializable;
+
+import static md.intelectsoft.petrolexpert.ClientMyDiscountCardCorporativActivity.round;
 
 
 /**
@@ -29,7 +32,7 @@ public class AssortmentCardAdapter extends ArrayAdapter<AssortmentCardSerializab
     }
 
     private static class ViewHolder {
-        TextView productName, productPrice, productCount;
+        TextView productName, productPrice, productDiscount;
     }
 
     @NonNull
@@ -46,7 +49,7 @@ public class AssortmentCardAdapter extends ArrayAdapter<AssortmentCardSerializab
 
             viewHolder.productName = convertView.findViewById(R.id.text_view_asl_name);
             viewHolder.productPrice = convertView.findViewById(R.id.txt_asl_price);
-            viewHolder.productCount = convertView.findViewById(R.id.textCountProduct);
+            viewHolder.productDiscount = convertView.findViewById(R.id.textDiscount);
 
             convertView.setTag(viewHolder);
         }
@@ -57,7 +60,19 @@ public class AssortmentCardAdapter extends ArrayAdapter<AssortmentCardSerializab
         AssortmentCardSerializable item = getItem(position);
 
         viewHolder.productName.setText(item.getName());
-        viewHolder.productPrice.setText(String.format("%.2f",item.getPrice()).replace(",",".") + " MDL");
+
+        if(item.getPriceDiscount() > 0 && item.getPriceDiscount() < item.getPrice()){
+            viewHolder.productDiscount.setVisibility(View.VISIBLE);
+            viewHolder.productPrice.setText(String.format("%.2f",item.getPrice()).replace(",",".") + " MDL");
+            viewHolder.productDiscount.setText(String.format("%.2f", item.getPriceDiscount()).replace(",",".") + " MDL");
+            viewHolder.productPrice.setTextSize(14);
+//            viewHolder.productPrice.setTextColor(getContext().getColor(R.color.red));
+            viewHolder.productPrice.setPaintFlags(viewHolder.productPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+        }
+        else {
+            viewHolder.productPrice.setText(String.format("%.2f", item.getPrice()).replace(",", ".") + " MDL");
+            viewHolder.productDiscount.setVisibility(View.GONE);
+        }
 //        viewHolder.productCount.setText(String.format("%.2f", item.getDailyLimit() - item.getDailyLimitConsumed()).replace(",","."));
 
         return convertView;

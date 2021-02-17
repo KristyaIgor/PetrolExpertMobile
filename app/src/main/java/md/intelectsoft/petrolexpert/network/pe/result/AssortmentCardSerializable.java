@@ -6,6 +6,7 @@ public class AssortmentCardSerializable implements Serializable {
     private String assortimentID;
     private String assortmentCode;
     private Double discount;
+    private Double priceDiscount;
     private String name;
     private Double price;
     private String priceLineID;
@@ -18,11 +19,13 @@ public class AssortmentCardSerializable implements Serializable {
     private Double monthlyLimitConsumed;
     private Double weeklyLimit;
     private Double weeklyLimitConsumed;
+    private Double vatPercent;
 
     public AssortmentCardSerializable(
             String assortimentID,
             String assortmentCode,
             Double discount,
+            Double priceDiscount,
             String name,
             Double price,
             String priceLineID,
@@ -34,11 +37,13 @@ public class AssortmentCardSerializable implements Serializable {
             Double monthlyLimit,
             Double monthlyLimitConsumed,
             Double weeklyLimit,
-            Double weeklyLimitConsumed) {
+            Double weeklyLimitConsumed,
+            Double vatPercent) {
 
         this.assortimentID = assortimentID;
         this.assortmentCode = assortmentCode;
         this.discount = discount;
+        this.priceDiscount = priceDiscount;
         this.name = name;
         this.price = price;
         this.priceLineID = priceLineID;
@@ -51,6 +56,7 @@ public class AssortmentCardSerializable implements Serializable {
         this.monthlyLimitConsumed = monthlyLimitConsumed;
         this.weeklyLimit = weeklyLimit;
         this.weeklyLimitConsumed = weeklyLimitConsumed;
+        this.vatPercent = vatPercent;
     }
 
     public String getAssortimentID() {
@@ -75,6 +81,14 @@ public class AssortmentCardSerializable implements Serializable {
 
     public void setDiscount(Double discount) {
         this.discount = discount;
+    }
+
+    public Double getPriceDiscount() {
+        return priceDiscount;
+    }
+
+    public void setPriceDiscount(Double priceDiscount) {
+        this.priceDiscount = priceDiscount;
     }
 
     public String getName() {
@@ -171,5 +185,13 @@ public class AssortmentCardSerializable implements Serializable {
 
     public void setWeeklyLimitConsumed(Double weeklyLimitConsumed) {
         this.weeklyLimitConsumed = weeklyLimitConsumed;
+    }
+
+    public Double getVatPercent() {
+        return vatPercent;
+    }
+
+    public void setVatPercent(Double vatPercent) {
+        this.vatPercent = vatPercent;
     }
 }

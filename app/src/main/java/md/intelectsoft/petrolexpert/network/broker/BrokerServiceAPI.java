@@ -18,10 +18,10 @@ public interface BrokerServiceAPI {
     Call<Boolean> ping();
 
     @POST("/ISConnectionBrokerService/json/RegisterApplication")
-    Call<RegisterApplication> registerApplicationCall(@Body SendRegisterApplication bodyRegisterApp);
+    Call<RegisterApplication> registerApplication(@Body SendRegisterApplication bodyRegisterApp);
 
     @POST("/ISConnectionBrokerService/json/GetURI")
-    Call<RegisterApplication> getURICall(@Body SendGetURI sendGetURI);
+    Call<RegisterApplication> getURI(@Body SendGetURI sendGetURI);
 
     @POST("/ISConnectionBrokerService/json/UpdateDiagnosticInformation")
     Call<ErrorMessage> updateDiagnosticInfo(@Body InformationData informationData);

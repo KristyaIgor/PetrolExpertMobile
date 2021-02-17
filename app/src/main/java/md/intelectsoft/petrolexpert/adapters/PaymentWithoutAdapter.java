@@ -1,10 +1,13 @@
 package md.intelectsoft.petrolexpert.adapters;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,50 +16,46 @@ import androidx.annotation.Nullable;
 import java.util.List;
 
 import md.intelectsoft.petrolexpert.R;
+import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.PaymentTypeStation;
 
 
 /**
  * Created by Igor on 10.02.2020
  */
 
-public class PaymentWithoutAdapter extends ArrayAdapter<String> {
+public class PaymentWithoutAdapter extends ArrayAdapter<PaymentTypeStation> {
     int layoutId;
 
-    public PaymentWithoutAdapter(@NonNull Context context, int resource, @NonNull List<String> objects) {
+    public PaymentWithoutAdapter(@NonNull Context context, int resource, @NonNull List<PaymentTypeStation> objects) {
         super(context, resource, objects);
         this.layoutId = resource;
     }
 
     private static class ViewHolder {
-        TextView productName;
+        ImageView payImage;
     }
 
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+        ViewHolder viewHolder = new ViewHolder();
 
-        ViewHolder viewHolder;
+        convertView = LayoutInflater.from(parent.getContext()).inflate(layoutId ,parent,false);
 
-        viewHolder = new ViewHolder();
-        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        viewHolder.payImage = convertView.findViewById(R.id.imagePaymentType);
 
-        if(convertView == null){
-            convertView = inflater.inflate(layoutId ,parent,false);
+        PaymentTypeStation item = getItem(position);
+        convertView.setTag(item);
 
-            viewHolder.productName = convertView.findViewById(R.id.textView7);
+        if(item.getImage() != null && item.getImage().length > 0){
+            Bitmap productImg = BitmapFactory.decodeByteArray(item.getImage(), 0, item.getImage().length);
 
-
-
-            convertView.setTag(viewHolder);
+            if(productImg != null) viewHolder.payImage.setImageBitmap(productImg);
         }
-        else {
-            viewHolder = (ViewHolder) convertView.getTag();
-        }
-
-        String item = getItem(position);
-
-        viewHolder.productName.setText(item);
-
+        if(!item.isEnabled())
+            convertView.setEnabled(false);
+        else
+            convertView.setEnabled(true);
 
         return convertView;
     }

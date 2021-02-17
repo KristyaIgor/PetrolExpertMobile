@@ -14,6 +14,10 @@ public class PaymentTypeStation {
     @Expose
     private Integer type;
 
+    private byte[] image;
+
+    private boolean enabled;
+
     public String getName() {
         return name;
     }
@@ -36,5 +40,21 @@ public class PaymentTypeStation {
 
     public void setType(Integer type) {
         this.type = type;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 }

@@ -13,6 +13,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -21,10 +25,11 @@ import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.Settings;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,25 +43,26 @@ import androidx.core.content.FileProvider;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-import com.google.gson.Gson;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,7 +81,10 @@ import java.util.concurrent.RunnableFuture;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.realm.Realm;
+import io.realm.RealmResults;
 import md.intelectsoft.petrolexpert.Utils.LocaleHelper;
+import md.intelectsoft.petrolexpert.Utils.PayTypeEnum;
 import md.intelectsoft.petrolexpert.Utils.SPFHelp;
 import md.intelectsoft.petrolexpert.enums.ShiftStateEnum;
 import md.intelectsoft.petrolexpert.network.broker.Body.InformationData;
@@ -86,6 +95,7 @@ import md.intelectsoft.petrolexpert.network.broker.Enum.BrokerServiceEnum;
 import md.intelectsoft.petrolexpert.network.broker.Results.AppDataRegisterApplication;
 import md.intelectsoft.petrolexpert.network.broker.Results.ErrorMessage;
 import md.intelectsoft.petrolexpert.network.broker.Results.RegisterApplication;
+import md.intelectsoft.petrolexpert.network.pe.PECErrorMessage;
 import md.intelectsoft.petrolexpert.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolexpert.network.pe.PEServiceAPI;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentSerializable;
@@ -93,7 +103,9 @@ import md.intelectsoft.petrolexpert.network.pe.result.GetCurrentShift;
 import md.intelectsoft.petrolexpert.network.pe.result.RegisterDevice;
 import md.intelectsoft.petrolexpert.network.pe.result.authorizeUser.GetAuthorizeUser;
 import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.AssortmentStation;
+import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.EmployeesCard;
 import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.GetStationSettings;
+import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.PaymentTypeStation;
 import md.intelectsoft.petrolexpert.printeractivity.PrinterFonts;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -105,10 +117,12 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.textTerminalNumber) TextView terminalNumber;
     @BindView(R.id.textOperatorName) TextView terminalUser;
     @BindView(R.id.textCashWorkPlaceMain) TextView terminalCashName;
+    @BindView(R.id.imageUserMain) ImageView imageMain;
 
 
     String androidID, deviceName, publicIp, privateIp, deviceSN, osVersion, deviceModel, deviceId, updateUrl;
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+    SimpleDateFormat simpleDateFormatHours = new SimpleDateFormat("dd HH:mm:ss");
     TimeZone timeZone = TimeZone.getTimeZone("Europe/Chisinau");
     ProgressDialog progressDialog;
     BrokerServiceAPI brokerServiceAPI;
@@ -130,12 +144,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.buttonScanWithoutIdentify) void onScanWithoutIdentify(){
-        if(4 + 4 == 5){
+        if(4 + 4 != 5){
             Call<GetStationSettings> getAssortmentCall = peServiceAPI.getStationSettings(deviceId);
             progressDialog.setMessage(getString(R.string.load_products_dialot_msg));
             progressDialog.setCancelable(false);
             progressDialog.setIndeterminate(true);
-            progressDialog.setButton(-1, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
+            progressDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel_button), new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     getAssortmentCall.cancel();
@@ -168,6 +182,8 @@ public class MainActivity extends AppCompatActivity {
                                     listOfProducts.add(product);
                                 }
 
+                                BaseApp.getApplication().setListProducts(listOfProducts);
+
                                 progressDialog.dismiss();
 
                                 Intent intent = new Intent(context, ProductsWithoutIndentingActivity.class);
@@ -188,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
                             progressDialog.dismiss();
                             new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                     .setTitle(getString(R.string.attention_dialog_title))
-                                    .setMessage("Error load products! Message: " + getAssortment.getErrorMessage() + ". Error code: " + getAssortment.getErrorCode())
+                                    .setMessage("Error load products! Message: " + PECErrorMessage.getErrorMessage(getAssortment.getErrorCode()))
                                     .setCancelable(false)
                                     .setPositiveButton(getString(R.string.ok_button), null)
                                     .show();
@@ -222,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @OnClick(R.id.imageButtonLogout) void onPrintX(){
+    @OnClick(R.id.imageButtonLogout) void onChangeUser(){
         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                 .setTitle(getString(R.string.attention_dialog_title))
                 .setMessage(getString(R.string.change_user_msg))
@@ -261,6 +277,7 @@ public class MainActivity extends AppCompatActivity {
         progressDialog = new ProgressDialog(context);
         brokerServiceAPI = BrokerRetrofitClient.getApiBrokerService();
         simpleDateFormat.setTimeZone(timeZone);
+        simpleDateFormatHours.setTimeZone(timeZone);
 
         deviceModel = Build.MODEL;
         deviceSN = Build.SERIAL;
@@ -287,6 +304,15 @@ public class MainActivity extends AppCompatActivity {
         terminalCashName.setText(SPFHelp.getInstance().getString("StationName","") + "/" + SPFHelp.getInstance().getString("Cash", ""));
         terminalNumber.setText(getString(R.string.nr_terminal) + SPFHelp.getInstance().getInt("RegisteredNumber",0));
 
+//        String companyLogo = SPFHelp.getInstance().getString("CompanyLogo", "");
+//        if(!companyLogo.equals("")){
+//            byte[] decodedString = Base64.decode(companyLogo, Base64.DEFAULT);
+//            Bitmap photo = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+//            imageMain.setImageBitmap(photo);
+//        }
+
+        getStationSettings();
+
         if(BaseApp.isVFServiceConnected())
             PrinterFonts.initialize(this.getAssets());
         else{
@@ -308,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onComplete(@NonNull Task<Boolean> task) {
                     if(task.isSuccessful()){
-                        Log.d("TAG", "remote config is fetched.");
+                        Log.d("PetrolExpert_BaseApp", "remote config is fetched.");
 
                         boolean isUpdate = remoteConfig.getBoolean("is_update");
                         updateUrl = remoteConfig.getString("update_url");
@@ -323,9 +349,129 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
-        if(SPFHelp.getInstance().getBoolean("DiagnosticStartSend", true))
+        if(!SPFHelp.getInstance().getBoolean("DiagnosticStartSend", false))
             sendDiagnosticData();
 
+    }
+
+    private void getStationSettings(){
+        Call<GetStationSettings> getAssortmentCall = peServiceAPI.getStationSettings(deviceId);
+        getAssortmentCall.enqueue(new Callback<GetStationSettings>() {
+            @Override
+            public void onResponse(Call<GetStationSettings> call, Response<GetStationSettings> response) {
+                GetStationSettings getStationSettings = response.body();
+
+                if(getStationSettings != null){
+                    if(getStationSettings.getErrorCode() == 0){
+                        if(getStationSettings.getEmployeesCards() != null && getStationSettings.getEmployeesCards().size() > 0){
+                            Realm mRealm = Realm.getDefaultInstance();
+                            RealmResults<EmployeesCard> inBase = mRealm.where(EmployeesCard.class).findAll();
+
+                            List<EmployeesCard> listLocal = mRealm.copyFromRealm(inBase);
+                            List<EmployeesCard> listRemote = getStationSettings.getEmployeesCards();
+
+                            if(!inBase.isEmpty()){
+                                for (EmployeesCard cardLocal : listLocal){
+                                    if(!listRemote.contains(cardLocal)){
+                                        cardLocal.setToDelete(true);
+                                    }
+                                }
+                                for (EmployeesCard cardRemote : listRemote){
+                                    if(!listLocal.contains(cardRemote)){
+                                        mRealm.executeTransaction(realm -> {
+                                            realm.insert(cardRemote);
+                                        });
+                                    }
+                                }
+
+                                RealmResults<EmployeesCard> inBaseAfter = mRealm.where(EmployeesCard.class).findAll();
+
+                                for(EmployeesCard item : listLocal){
+                                    EmployeesCard toDelete = inBaseAfter.where().equalTo("cardBarcode", item.getCardBarcode()).findFirst();
+                                    if(toDelete != null)
+                                        if(item.isToDelete())
+                                            mRealm.executeTransaction(realm -> toDelete.deleteFromRealm());
+                                }
+                            }
+                            else{
+                                mRealm.executeTransaction(realm -> {
+                                    for(EmployeesCard item: listRemote){
+                                        realm.insert(item);
+                                    }
+                                });
+                            }
+
+                            if(getStationSettings.getPaymentTypes() != null && getStationSettings.getPaymentTypes().size() > 0){
+                                List<PaymentTypeStation> listPayments = new ArrayList<>();
+
+                                for (PaymentTypeStation pay : getStationSettings.getPaymentTypes()){
+                                    if(pay.getType() == PayTypeEnum.Cash) {
+                                        Drawable drawable = context.getDrawable(R.drawable.cash_pay_icon);
+                                        Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+                                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+                                        pay.setImage(stream.toByteArray());
+                                        pay.setEnabled(true);
+                                        listPayments.add(pay);
+                                    }
+                                    else if(pay.getType() == PayTypeEnum.CreditCard){
+                                        Drawable drawable = context.getDrawable(R.drawable.card_bank_pay);
+                                        Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+                                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+                                        pay.setImage(stream.toByteArray());
+                                        pay.setEnabled(true);
+                                        listPayments.add(pay);
+                                    }
+                                }
+
+                                PaymentTypeStation dkvStation = new PaymentTypeStation();
+
+                                dkvStation.setName("DKV Card");
+                                dkvStation.setType(15);
+
+                                Drawable drawable = context.getDrawable(R.drawable.dkv_pay_icon);
+                                Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+                                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+                                dkvStation.setImage(stream.toByteArray());
+                                dkvStation.setEnabled(false);
+                                listPayments.add(dkvStation);
+
+                                BaseApp.getApplication().setListPayment(listPayments);
+                            }
+
+                            if(getStationSettings.getAssortment() != null && getStationSettings.getAssortment().size() > 0){
+
+                                List<AssortmentSerializable> listOfProducts = new ArrayList<>();
+
+                                for(AssortmentStation item: getStationSettings.getAssortment()){
+                                    AssortmentSerializable product = new AssortmentSerializable(
+                                            item.getAssortimentID(),
+                                            item.getAssortmentCode(),
+                                            item.getDiscount(),
+                                            item.getName(),
+                                            item.getPrice(),
+                                            item.getPriceLineID());
+
+                                    listOfProducts.add(product);
+                                }
+
+                                BaseApp.getApplication().setListProducts(listOfProducts);
+                            }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<GetStationSettings> call, Throwable t) {
+
+            }
+        });
     }
 
     private void showDialogNewVersion(String oldVersion, String newVersion, String url) {
@@ -415,16 +561,17 @@ public class MainActivity extends AppCompatActivity {
         JSONObject battery = getBatteryInformation(this);
         JSONObject memory = getMemoryInformation();
         JSONObject cpu = getCPUInformation();
-        JSONObject wifi = getWIFIInformation();
+        JSONObject wifi = getCurrentSsid(this);
 
         try {
 
             informationArray.put("Battery", battery);
             informationArray.put("Memory", memory);
             informationArray.put("CPU", cpu);
-            informationArray.put("WiFi", wifi);
+            informationArray.put("Network", wifi);
+            informationArray.put("Date", simpleDateFormat.format(new Date().getTime()));
 
-            Log.e("TAG", "onNavigationItemSelected JSON array: " + informationArray.toString());
+            Log.e("PetrolExpert_BaseApp", "onNavigationItemSelected JSON array: " + informationArray.toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -490,7 +637,7 @@ public class MainActivity extends AppCompatActivity {
                         registerDevice();
                     }
                     else
-                        showErrorDialogAuthUser(getString(R.string.error_auth_user_msg) + getAuthorizeUser.getErrorMessage());
+                        showErrorDialogAuthUser(getString(R.string.error_auth_user_msg) + PECErrorMessage.getErrorMessage(getAuthorizeUser.getErrorCode()));
                 }
                 else showErrorDialogAuthUser(getString(R.string.error_auth_user_empty));
             }
@@ -552,7 +699,7 @@ public class MainActivity extends AppCompatActivity {
         if(requestCode == 121){
             if(resultCode == RESULT_OK){
                 String barcode = data != null ? data.getStringExtra("Barcode") : "";
-                Log.e("TAG", "onActivityResult: " + barcode );
+                Log.e("PetrolExpert_BaseApp", "onActivityResult: " + barcode );
             }
         }
         else if( requestCode == 245){
@@ -642,7 +789,7 @@ public class MainActivity extends AppCompatActivity {
                         terminalNumber.setText(getString(R.string.nr_terminal) + device.getRegistredNumber());
                         SPFHelp.getInstance().putInt("RegisteredNumber", device.getRegistredNumber());
                     }
-                    else showErrorDialogRegisterDevice(getString(R.string.device_not_registered) + device.getErrorMessage());
+                    else showErrorDialogRegisterDevice(getString(R.string.device_not_registered) + PECErrorMessage.getErrorMessage(device.getNoError()));
                 else showErrorDialogRegisterDevice(getString(R.string.device_not_registered_not_response));
             }
 
@@ -698,28 +845,54 @@ public class MainActivity extends AppCompatActivity {
         registerApplication.setApplicationVersion(getAppVersion(this));
         registerApplication.setProductType(131);
         registerApplication.setWorkPlace(SPFHelp.getInstance().getString("Cash",""));
+        registerApplication.setSalePointAddress(SPFHelp.getInstance().getString("StationAddress",""));
         registerApplication.setLastAuthorizedUser(SPFHelp.getInstance().getString("Owner", ""));
         registerApplication.setOSVersion(osVersion);
 
-        Call<RegisterApplication> getURICall = brokerServiceAPI.getURICall(registerApplication);
+        Call<RegisterApplication> getURICall = brokerServiceAPI.getURI(registerApplication);
 
         getURICall.enqueue(new Callback<RegisterApplication>() {
             @Override
             public void onResponse(Call<RegisterApplication> call, Response<RegisterApplication> response) {
                 RegisterApplication result = response.body();
                 if (result == null){
-                    checkApplicationUserAvailable();
+                    Toast.makeText(context, "Response empty from central service!", Toast.LENGTH_SHORT).show();
                 }
                 else{
                     if(result.getErrorCode() == 0) {
+                        String logo = null;
                         AppDataRegisterApplication appDataRegisterApplication = result.getAppData();
                         //if app registered successful , save installation id and company name
+                        if(appDataRegisterApplication.getLogo() != null && !appDataRegisterApplication.getLogo().equals("")){
+                            String photo = appDataRegisterApplication.getLogo();
+                            if(photo != null && photo.length() > 0){
+                                photo = photo.replace("data:image/","");
+                                String typePhoto = photo.substring(0,3);
 
+                                switch (typePhoto) {
+                                    case "jpe":
+                                        photo = photo.replace("jpeg;base64,", "");
+                                        break;
+                                    case "jpg":
+                                        photo = photo.replace("jpg;base64,", "");
+                                        break;
+                                    case "png":
+                                        photo = photo.replace("png;base64,", "");
+                                        break;
+                                }
+
+                                logo = photo;
+//                                byte[] decodedString = Base64.decode(logo, Base64.DEFAULT);
+//                                Bitmap photoBm = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+//                                imageMain.setImageBitmap(photoBm);
+                            }
+                        }
                         Map<String,String> licenseData = new HashMap<>();
                         licenseData.put("LicenseID",appDataRegisterApplication.getLicenseID());
                         licenseData.put("LicenseCode",appDataRegisterApplication.getLicenseCode());
                         licenseData.put("CompanyName",appDataRegisterApplication.getCompany());
                         licenseData.put("CompanyIDNO",appDataRegisterApplication.getIDNO());
+                        licenseData.put("CompanyLogo", logo == null ? "" : logo);
 
                         SPFHelp.getInstance().putStrings(licenseData);
 
@@ -736,7 +909,6 @@ public class MainActivity extends AppCompatActivity {
                             SPFHelp.getInstance().putString("URI", appDataRegisterApplication.getURI());
                             SPFHelp.getInstance().putLong("DateReceiveURI", nowDate);
                             SPFHelp.getInstance().putLong("ServerDateTime", serverDate);
-                            checkApplicationUserAvailable();
 
                         }else{
                             new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
@@ -815,7 +987,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else {
                         Toast.makeText(context, result.getErrorMessage(), Toast.LENGTH_SHORT).show();
-                        checkApplicationUserAvailable();
                     }
                 }
             }
@@ -823,14 +994,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<RegisterApplication> call, Throwable t) {
                 Toast.makeText(context, t.getMessage(), Toast.LENGTH_SHORT).show();
-                checkApplicationUserAvailable();
             }
         });
-    }
-
-    private void checkApplicationUserAvailable() {
-        //TODO check app id can work if not response from broker service
-
     }
 
     private String getIPAddress(boolean useIPv4) {
@@ -1001,25 +1166,107 @@ public class MainActivity extends AppCompatActivity {
 
         return cpu;
     }
-    private JSONObject getWIFIInformation(){
+
+    @NotNull
+    private JSONObject getCurrentSsid (@NotNull Context context) {
         JSONObject wifi = new JSONObject();
 
-        WifiManager wifiManager = (WifiManager) context.getSystemService (Context.WIFI_SERVICE);
-        int state = wifiManager.getWifiState();
-
-        switch (state){
-            case WifiManager.WIFI_STATE_ENABLED :{
-
+        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if (networkInfo.isConnected()) {
+            final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+            final WifiInfo connectionInfo = wifiManager.getConnectionInfo();
+            if (connectionInfo != null && connectionInfo.getSSID().length() > 0) {
+                try {
+                    wifi.put("Connected", true);
+                    wifi.put("SSID", connectionInfo.getSSID());
+                    wifi.put("IP", intToInet4AddressHTL(connectionInfo.getIpAddress()));
+                    wifi.put("MAC", getMacAddressWiFi());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                try {
+                    wifi.put("Connected", false);
+                    wifi.put("SSID", "");
+                    wifi.put("IP", getIPAddress(true));
+                    wifi.put("MAC", getMacAddress());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
-        WifiInfo info = wifiManager.getConnectionInfo();
-
-        String ssid = info.getSSID();
-
-        Log.e("TAG", "getWIFIInformation: " + ssid );
-
         return wifi;
+    }
+
+    private String getMacAddressWiFi() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    res1.append(String.format("%02X:",b));
+                }
+
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+        }
+        return "02:00:00:00:00:00";
+    }
+
+    public static Inet4Address intToInet4AddressHTL(int hostAddress) {
+        return intToInet4AddressHTH(Integer.reverseBytes(hostAddress));
+    }
+
+    public static Inet4Address intToInet4AddressHTH(int hostAddress) {
+        byte[] addressBytes = { (byte) (0xff & (hostAddress >> 24)),
+                (byte) (0xff & (hostAddress >> 16)),
+                (byte) (0xff & (hostAddress >> 8)),
+                (byte) (0xff & hostAddress) };
+
+        try {
+            return (Inet4Address) InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            throw new AssertionError();
+        }
+    }
+
+    public static String getMacAddress() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    // res1.append(Integer.toHexString(b & 0xFF) + ":");
+                    res1.append(String.format("%02X:",b));
+                }
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+            //handle exception
+        }
+        return "";
     }
 
     public static double round(double value, int places) {

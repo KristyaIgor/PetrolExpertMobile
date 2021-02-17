@@ -27,6 +27,8 @@ public class LineBill extends RealmObject {
 
     private String name;
 
+    private double vatPercent;
+
     public Double getCount() {
         return count;
     }
@@ -81,5 +83,13 @@ public class LineBill extends RealmObject {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public double getVatPercent() {
+        return vatPercent;
+    }
+
+    public void setVatPercent(double vatPercent) {
+        this.vatPercent = vatPercent;
     }
 }

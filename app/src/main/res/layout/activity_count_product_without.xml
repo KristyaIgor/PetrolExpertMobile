@@ -35,7 +35,6 @@
         app:ctg_addSlideBackgroundColor="@android:color/transparent"
         app:ctg_addSlideColor="@color/newGreenLight"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/divider9" />
 
@@ -138,14 +137,26 @@
         android:id="@+id/textCountProductPrice"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
         android:text="0.00 MDL"
         android:textColor="@color/white"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="@+id/imageCancelCount"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="@+id/textCountProductName"
+        app:layout_constraintEnd_toStartOf="@+id/textProductDiscountMDL"
         app:layout_constraintStart_toEndOf="@+id/textCountProductName"
-        app:layout_constraintTop_toTopOf="@+id/imageCancelCount" />
+        app:layout_constraintTop_toTopOf="@+id/textCountProductName" />
+
+    <TextView
+        android:id="@+id/textProductDiscountMDL"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:paddingStart="8dp"
+        android:text="0.00 MDL"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toBottomOf="@+id/textCountProductName"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textCountProductName" />
 
     <TextView
         android:id="@+id/textTitleCountSum"

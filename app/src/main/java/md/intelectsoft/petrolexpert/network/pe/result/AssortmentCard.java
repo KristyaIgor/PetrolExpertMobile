@@ -19,6 +19,9 @@ public class AssortmentCard {
     @SerializedName("Price")
     @Expose
     private Double price;
+    @SerializedName("DiscountedPrice")
+    @Expose
+    private Double priceDiscounted;
     @SerializedName("PriceLineID")
     @Expose
     private String priceLineID;
@@ -49,6 +52,9 @@ public class AssortmentCard {
     @SerializedName("WeeklyLimitConsumed")
     @Expose
     private Double weeklyLimitConsumed;
+    @SerializedName("VATPercent")
+    @Expose
+    private Double vatPercent;
 
     public String getAssortimentID() {
         return assortimentID;
@@ -88,6 +94,14 @@ public class AssortmentCard {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public Double getPriceDiscounted() {
+        return priceDiscounted;
+    }
+
+    public void setPriceDiscounted(Double priceDiscounted) {
+        this.priceDiscounted = priceDiscounted;
     }
 
     public String getPriceLineID() {
@@ -168,5 +182,13 @@ public class AssortmentCard {
 
     public void setWeeklyLimitConsumed(Double weeklyLimitConsumed) {
         this.weeklyLimitConsumed = weeklyLimitConsumed;
+    }
+
+    public Double getVatPercent() {
+        return vatPercent;
+    }
+
+    public void setVatPercent(Double vatPercent) {
+        this.vatPercent = vatPercent;
     }
 }

@@ -40,14 +40,12 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.URL;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -66,6 +64,7 @@ import md.intelectsoft.petrolexpert.network.broker.BrokerServiceAPI;
 import md.intelectsoft.petrolexpert.network.broker.Enum.BrokerServiceEnum;
 import md.intelectsoft.petrolexpert.network.broker.Results.AppDataRegisterApplication;
 import md.intelectsoft.petrolexpert.network.broker.Results.RegisterApplication;
+import md.intelectsoft.petrolexpert.network.pe.PECErrorMessage;
 import md.intelectsoft.petrolexpert.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolexpert.network.pe.PEServiceAPI;
 import md.intelectsoft.petrolexpert.network.pe.result.CashList;
@@ -158,7 +157,7 @@ public class AuthorizeActivity extends AppCompatActivity {
         codOfUser = "";
     }
     @OnClick(R.id.buttonAuthToServer) void onAuthUser(){
-        Log.e("TAG", "onAuthUserCod: "  + codOfUser);
+        Log.e("PetrolExpert_BaseApp", "onAuthUserCod: "  + codOfUser);
         authorizeUser();
     }
 
@@ -323,11 +322,11 @@ public class AuthorizeActivity extends AppCompatActivity {
                                     .setCancelable(false)
                                     .setSingleChoiceItems(adapter, -1, (dialog, which) -> {
                                         itemSelected = adapter.getItem(which);
-                                        Log.e("TAG", "onClick: " + itemSelected.getCashName());
+                                        Log.e("PetrolExpert_BaseApp", "onClick: " + itemSelected.getCashName());
                                     })
                                     .setPositiveButton(getString(R.string.select_button), (dialog, which) -> {
                                         if(itemSelected != null){
-                                            Log.e("TAG", "onClick: " + itemSelected.getCashName());
+                                            Log.e("PetrolExpert_BaseApp", "onClick: " + itemSelected.getCashName());
                                             registerDeviceToBack(SPFHelp.getInstance().getString("TokenId",""));
                                         }
 
@@ -337,13 +336,51 @@ public class AuthorizeActivity extends AppCompatActivity {
                                     })
                                     .show();
                         }
+
                     }
+                    else{
+                        new MaterialAlertDialogBuilder(context,  R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                .setTitle(getString(R.string.attention_dialog_title))
+                                .setCancelable(false)
+                                .setMessage("Ops!" + PECErrorMessage.getErrorMessage(getCashList.getErrorCode()))
+                                .setPositiveButton(getString(R.string.ok_button), (dialog, which) -> {
+
+                                })
+                                .setNeutralButton(getString(R.string.retry_button), (dialogInterface, i) -> {
+                                    getCashList(token);
+                                })
+                                .show();
+                    }
+                }
+                else{
+                    new MaterialAlertDialogBuilder(context,  R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                            .setTitle(getString(R.string.attention_dialog_title))
+                            .setCancelable(false)
+                            .setMessage(getString(R.string.response_from_broker_is_null))
+                            .setPositiveButton(getString(R.string.ok_button), (dialog, which) -> {
+
+                            })
+                            .setNeutralButton(getString(R.string.retry_button), (dialogInterface, i) -> {
+                                getCashList(token);
+                            })
+                            .show();
                 }
             }
 
             @Override
             public void onFailure(Call<GetCashList> call, Throwable t) {
+                progressDialog.dismiss();
+                new MaterialAlertDialogBuilder(context,  R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                        .setTitle(getString(R.string.attention_dialog_title))
+                        .setCancelable(false)
+                        .setMessage(getString(R.string.ops_failure_get_cash_list) + t.getMessage())
+                        .setPositiveButton(getString(R.string.ok_button), (dialog, which) -> {
 
+                        })
+                        .setNeutralButton(getString(R.string.retry_button), (dialogInterface, i) -> {
+                            getCashList(token);
+                        })
+                        .show();
             }
         });
     }
@@ -373,6 +410,7 @@ public class AuthorizeActivity extends AppCompatActivity {
                         if(SPFHelp.getInstance().getString("CashId", null) == null){
                             SPFHelp.getInstance().putString("Cash", itemSelected.getCashName());
                             SPFHelp.getInstance().putString("StationName", itemSelected.getStationName());
+                            SPFHelp.getInstance().putString("StationAddress", itemSelected.getStationAddress());
                             SPFHelp.getInstance().putString("CashId", itemSelected.getCashID());
                         }
                         SPFHelp.getInstance().putBoolean("FirstStart", false);
@@ -380,7 +418,7 @@ public class AuthorizeActivity extends AppCompatActivity {
                         startActivity(new Intent(context, MainActivity.class));
                         finish();
                     }
-                    else showErrorDialog(getString(R.string.device_not_registered) + device.getErrorMessage());
+                    else showErrorDialog(getString(R.string.device_not_registered) + PECErrorMessage.getErrorMessage(device.getNoError()));
                 else showErrorDialog(getString(R.string.device_not_registered_not_response));
             }
 
@@ -442,7 +480,7 @@ public class AuthorizeActivity extends AppCompatActivity {
     }
 
     private void registerApplicationToBroker(SendRegisterApplication registerApplication, String activationCode) {
-        Call<RegisterApplication> registerApplicationCall = brokerServiceAPI.registerApplicationCall(registerApplication);
+        Call<RegisterApplication> registerApplicationCall = brokerServiceAPI.registerApplication(registerApplication);
 
         progressDialog.setMessage(getString(R.string.register_device_pg));
         progressDialog.setCancelable(false);
@@ -469,12 +507,37 @@ public class AuthorizeActivity extends AppCompatActivity {
                 else{
                     if(result.getErrorCode() == 0) {
                         AppDataRegisterApplication appDataRegisterApplication = result.getAppData();
+                        String logo = null;
+
+                        if(appDataRegisterApplication.getLogo() != null && !appDataRegisterApplication.getLogo().equals("")){
+                            String photo = appDataRegisterApplication.getLogo();
+                            if(photo != null && photo.length() > 0){
+                                photo = photo.replace("data:image/","");
+                                String typePhoto = photo.substring(0,3);
+
+                                switch (typePhoto) {
+                                    case "jpe":
+                                        photo = photo.replace("jpeg;base64,", "");
+                                        break;
+                                    case "jpg":
+                                        photo = photo.replace("jpg;base64,", "");
+                                        break;
+                                    case "png":
+                                        photo = photo.replace("png;base64,", "");
+                                        break;
+                                }
+
+                                logo = photo;
+                            }
+                        }
+
                         //if app registered successful , save installation id and company name
                         Map<String,String> licenseData = new HashMap<>();
                         licenseData.put("LicenseID", appDataRegisterApplication.getLicenseID());
                         licenseData.put("LicenseCode", appDataRegisterApplication.getLicenseCode());
                         licenseData.put("CompanyName", appDataRegisterApplication.getCompany());
                         licenseData.put("CompanyIDNO", appDataRegisterApplication.getIDNO());
+                        licenseData.put("CompanyLogo", logo == null ? "" : logo);
                         licenseData.put("LicenseActivationCode", activationCode);
 
                         SPFHelp.getInstance().putStrings(licenseData);
@@ -514,7 +577,17 @@ public class AuthorizeActivity extends AppCompatActivity {
                     }
                     else {
                         progressDialog.dismiss();
-                        Toast.makeText(context, result.getErrorMessage(), Toast.LENGTH_SHORT).show();
+                        new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                .setTitle(getString(R.string.attention_dialog_title))
+                                .setMessage("Ops!" + PECErrorMessage.getErrorMessage(result.getErrorCode()))
+                                .setCancelable(false)
+                                .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
+                                    finish();
+                                })
+                                .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
+                                    registerApplicationToBroker(registerApplication, activationCode);
+                                }))
+                                .show();
                     }
                 }
             }

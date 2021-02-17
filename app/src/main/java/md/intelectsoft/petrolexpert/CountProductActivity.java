@@ -5,9 +5,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Paint;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,22 +19,27 @@ import android.os.Message;
 import android.os.RemoteException;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.vfi.smartpos.deviceservice.aidl.IDeviceService;
 import com.vfi.smartpos.deviceservice.aidl.IPrinter;
 import com.vfi.smartpos.deviceservice.aidl.PrinterConfig;
 import com.vfi.smartpos.deviceservice.aidl.PrinterListener;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -44,6 +53,7 @@ import md.intelectsoft.petrolexpert.Utils.SPFHelp;
 import md.intelectsoft.petrolexpert.bottomsheet.PaymentMethodSheetDialog;
 import md.intelectsoft.petrolexpert.enums.LimitCardEnum;
 import md.intelectsoft.petrolexpert.models.ToggleButton;
+import md.intelectsoft.petrolexpert.network.pe.PECErrorMessage;
 import md.intelectsoft.petrolexpert.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolexpert.network.pe.PEServiceAPI;
 import md.intelectsoft.petrolexpert.network.pe.body.registerBill.BillRegistered;
@@ -52,17 +62,19 @@ import md.intelectsoft.petrolexpert.network.pe.body.registerBill.PaymentBill;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentCardSerializable;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentSerializable;
 import md.intelectsoft.petrolexpert.network.pe.result.RegisterBillResponse;
-import md.intelectsoft.petrolexpert.printeractivity.PrinterFonts;
+import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.EmployeesCard;
+import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.PaymentTypeStation;
 import md.intelectsoft.petrolexpert.realm.FiscalKey;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 @SuppressLint("NonConstantResourceId")
-public class CountProductActivity extends AppCompatActivity {
+public class CountProductActivity extends AppCompatActivity  implements PaymentMethodSheetDialog.ItemClickListener{
     @BindView(R.id.toggleQuantityOrSum) ToggleButton toggleButton;
     @BindView(R.id.textCountProductName) TextView productName;
     @BindView(R.id.textCountProductPrice) TextView productPrice;
+    @BindView(R.id.textProductDiscountMDL) TextView productPriceDiscount;
     @BindView(R.id.textTitleCountSum) TextView titleCountOrSum;
     @BindView(R.id.textCountOrSum) TextView countOrSum;
     @BindView(R.id.textTotalBillSum) TextView totalBill;
@@ -74,15 +86,17 @@ public class CountProductActivity extends AppCompatActivity {
 
     boolean isLeftButtonSelected = true;
 
-    String nameProduct, cardId;
+    String nameProduct, cardId, cardName;
     double priceProduct = 0 , maxClientAvailable = 0;
-    private boolean isAuth = false;
+    private boolean isAuth = false , isUserOperator = false;
     int limitType;
     ProgressDialog progressDialog;
     PEServiceAPI peServiceAPI;
     Context context;
 
     public static DisplayMetrics displayMetrics;
+
+    PaymentMethodSheetDialog payDialog;
 
     AssortmentCardSerializable productWithAuth;
     AssortmentSerializable productWithoutAuth;
@@ -93,7 +107,9 @@ public class CountProductActivity extends AppCompatActivity {
     IPrinter printer;
 
     BillRegistered bill;
+    Realm mRealm;
 
+    DecimalFormat decimalFormat = new DecimalFormat("##.###");
 
     @OnClick(R.id.imageCancelCount) void onCloseCount(){
         finish();
@@ -217,67 +233,82 @@ public class CountProductActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.buttonPayWithoutIdentify) void onPay(){
-        double sumOrQuantity = round(Double.parseDouble(countOrSum.getText().toString()), 2);
+        double sumOrQuantity = round(Double.parseDouble(countOrSum.getText().toString()), 4);
         if(sumOrQuantity > 0){
             if(isAuth){ // Если продажа клиенту который авторизацию прошел , либо QR кодом либо корпоративной картой
+
                 if(isLeftButtonSelected){ //Если продажа идет по сумме
+                    double sumInput = sumOrQuantity;
                     if(productWithAuth.getDailyLimit() == 0){ // Если лимит у товара 0 проверяю по доступной сумме
                         if(sumOrQuantity <= maxClientAvailable) // если сумма чека меньше чем доступная сумма , продажа разрешается
-                            sendBillToBackAndSaveLocal(sumOrQuantity , round(sumOrQuantity / productWithAuth.getPrice(), 2));
+                            sendBillToBackAndSaveLocal(sumInput, sumInput, sumInput, round(sumInput / productWithAuth.getPriceDiscount(), 4), 0 , true);
                         else // Если сумма чека больше чем доступная сумма, продажа блокируется , выводится сообщение на экран в лееях
                             showErrorDialogLimitError(getString(R.string.suma_cecului_mare_ca_la_client) + round(sumOrQuantity - maxClientAvailable, 2) + " MDL");
                     }
                     else{ //иначе проверяю по лимиту у товара
                         if(limitType == LimitCardEnum.MDL){  // если лимит стоит в лееях
-                            double sumOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
-                            double quantity = round(sumOrQuantity / productWithAuth.getPrice(), 2);
+                            double sumOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 4);
+                            double quantity = round(sumInput / productWithAuth.getPriceDiscount(), 4);
                             if(sumOrQuantity <= sumOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
-                                sendBillToBackAndSaveLocal(sumOrQuantity , quantity);
+                                sendBillToBackAndSaveLocal(sumInput, sumInput, sumInput, quantity, 0 , true);
                             else // иначе продажа блокируется , выводится сообщение на экран в лееях
                                 showErrorDialogLimitError(getString(R.string.limita_zi_intrecuta) + round(sumOrQuantity - sumOfLimit, 2) + " MDL");
                         }
                         else{ //иначе проверяю по литрам
-                            double literOfInput = round(sumOrQuantity / productWithAuth.getPrice(), 2);
-                            double literOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
+                            double literOfInput = round(sumInput / productWithAuth.getPriceDiscount(), 4);
+                            double literOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 4);
                             if(literOfInput <= literOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
-                                sendBillToBackAndSaveLocal(sumOrQuantity , literOfInput);
+                                sendBillToBackAndSaveLocal(sumInput, sumInput, sumInput, literOfInput, 0 , true);
                             else // иначе продажа блокируется , выводится сообщение на экран в лееях
                                 showErrorDialogLimitError(getString(R.string.limita_zi_intrecuta) + round(literOfInput - literOfLimit, 2) + " L.");
                         }
                     }
                 }
                 else{  // если продажа идет по литрам
+                    double countInput = sumOrQuantity;
+
                     if(productWithAuth.getDailyLimit() == 0){ // Если лимит у товара 0 проверяю по доступной сумме
-                        double sumOfInput = round(sumOrQuantity * productWithAuth.getPrice(), 2);
-                        if(sumOfInput <= maxClientAvailable)  //если кол-во товара умножить на цену товара, меньше чем доступная сумма, продажа разрешается
-                            sendBillToBackAndSaveLocal(sumOfInput , sumOrQuantity);
+                        double sumOfInput = round(countInput * productWithAuth.getPrice(), 4);
+                        double sumOfInputDiscount = round(countInput * productWithAuth.getPriceDiscount(), 4);
+                        if(sumOfInputDiscount <= maxClientAvailable)  //если кол-во товара умножить на цену товара, меньше чем доступная сумма, продажа разрешается
+                            sendBillToBackAndSaveLocal(sumOfInput, sumOfInputDiscount, sumOfInputDiscount, countInput, 0 , true);
                         else // иначе продажа блокируется , выводится сообщение на экран в литрах
                             showErrorDialogLimitError(getString(R.string.mai_mult_toplivo_ca_la_client_disponibil) + (sumOfInput - maxClientAvailable) + " MDL");
                     }
                     else{ //иначе проверяю по лимиту у товара
                         if(limitType == LimitCardEnum.MDL){  // если лимит стоит в лееях
-                            double sumOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
-                            double sumOfInput = round(sumOrQuantity * productWithAuth.getPrice(), 2);
-                            if(sumOfInput <= sumOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
-                                sendBillToBackAndSaveLocal(sumOfInput , sumOrQuantity);
+                            double sumOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 4);
+                            double sumOfInput = round(countInput * productWithAuth.getPrice(), 4);
+                            double sumOfInputDiscount = round(countInput * productWithAuth.getPriceDiscount(), 4);
+                            if(sumOfInputDiscount <= sumOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
+                                sendBillToBackAndSaveLocal(sumOfInput, sumOfInputDiscount, sumOfInputDiscount, countInput, 0 , true);
                             else // иначе продажа блокируется , выводится сообщение на экран в лееях
                                 showErrorDialogLimitError(getString(R.string.limita_zi_intrecuta) + round(sumOfInput - sumOfLimit, 2) + " MDL");
                         }
                         else{ //иначе проверяю по литрам
-                            double sumOfInput = round(sumOrQuantity * productWithAuth.getPrice(), 2);
-                            double literOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 2);
-                            if(sumOrQuantity <= literOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
-                                sendBillToBackAndSaveLocal(sumOfInput , sumOrQuantity);
+                            double sumOfInput = round(countInput * productWithAuth.getPrice(), 4);
+                            double literOfLimit = round(productWithAuth.getDailyLimit() - productWithAuth.getDailyLimitConsumed(), 4);
+                            double sumOfInputDiscount = round(countInput * productWithAuth.getPriceDiscount(), 4);
+                            if(countInput <= literOfLimit) //если сумма товара разделить на цену ,получая литры, меньше чем дневной лимит товара минус сегодняшнее потребление то продажа разрешается
+                                sendBillToBackAndSaveLocal(sumOfInput, sumOfInputDiscount, sumOfInputDiscount, countInput, 0 , true);
                             else // иначе продажа блокируется , выводится сообщение на экран в лееях
-                                showErrorDialogLimitError(getString(R.string.limita_zi_intrecuta) + round(sumOrQuantity - literOfLimit, 2) + " L.");
+                                showErrorDialogLimitError(getString(R.string.limita_zi_intrecuta) + round(sumOrQuantity - literOfLimit, 4) + " L.");
                         }
                     }
+
                 }
             }
             else{
+                double sumProduct = 0;
+                if(isLeftButtonSelected)
+                    sumProduct = sumOrQuantity;
+                else
+                    sumProduct = round(sumOrQuantity * productWithoutAuth.getPrice(), 4);
 
-                PaymentMethodSheetDialog loginForm = PaymentMethodSheetDialog.newInstance();
-                loginForm.show(getSupportFragmentManager(), PaymentMethodSheetDialog.TAG);
+                payDialog = PaymentMethodSheetDialog.newInstance(productWithoutAuth, sumProduct);
+
+                payDialog.show(getSupportFragmentManager(), PaymentMethodSheetDialog.TAG);
+
             }
         }
         else{
@@ -296,7 +327,7 @@ public class CountProductActivity extends AppCompatActivity {
         return (double) tmp / factor;
     }
 
-    private void sendBillToBackAndSaveLocal(double sum , double quantity) {
+    public void sendBillToBackAndSaveLocal(double sum, double discountedSum, double paymentSum, double quantity, int payCode, boolean validate) {
         bill = new BillRegistered();
         bill.setClientCardCode(cardId);
         bill.setOfficeCode(SPFHelp.getInstance().getString("deviceId",""));
@@ -306,21 +337,23 @@ public class CountProductActivity extends AppCompatActivity {
         bill.setCashId(SPFHelp.getInstance().getString("CashId",""));
         bill.setCashName(SPFHelp.getInstance().getString("Cash",""));
         bill.setStationName(SPFHelp.getInstance().getString("StationName", ""));
+        bill.setValidate(validate);
 
         LineBill lineBill = new LineBill();
         PaymentBill paymentBill = new PaymentBill();
 
         lineBill.setNomenclatureCode(productWithAuth.getAssortmentCode());
         lineBill.setPrice(productWithAuth.getPrice());
-        lineBill.setDiscountedPrice(productWithAuth.getPrice());
+        lineBill.setDiscountedPrice(productWithAuth.getPriceDiscount());
         lineBill.setName(productWithAuth.getName());
 
         lineBill.setSum(sum);
         lineBill.setCount(quantity);
-        lineBill.setDiscountedSum(sum);
+        lineBill.setDiscountedSum(discountedSum);
+        lineBill.setVatPercent(productWithAuth.getVatPercent());
 
-        paymentBill.setSum(sum);
-        paymentBill.setPaymentCode(0);
+        paymentBill.setSum(paymentSum);
+        paymentBill.setPaymentCode(payCode);
 
         RealmList<PaymentBill> paymentBillList = new RealmList<>();
         RealmList<LineBill> listLines = new RealmList<>();
@@ -331,7 +364,26 @@ public class CountProductActivity extends AppCompatActivity {
         bill.setLines(listLines);
         bill.setPaymentBills(paymentBillList);
 
+        FiscalKey key = mRealm.where(FiscalKey.class).findFirst();
+        if (key != null) {
+            bill.setFiscal(true);
+            Number indexFiscalMax = mRealm.where(BillRegistered.class).max("globalNumberFisc");
+            bill.setGlobalNumberFisc(indexFiscalMax.intValue() + 1);
+        }
+        else {
+            bill.setFiscal(false);
+            Number indexFiscalMax = mRealm.where(BillRegistered.class).max("globalNumberNeFisc");
+            if(indexFiscalMax == null)
+                indexFiscalMax = 0;
+            bill.setGlobalNumberNeFisc(indexFiscalMax.intValue() + 1);
+        }
         registerBillToBack(bill);
+    }
+
+
+    @Override
+    public void onItemClick(PaymentTypeStation item) {
+        Log.e("PetrolExpert_BaseApp", "onItemClick: " + item.getPaymentCode());
     }
 
     @Override
@@ -347,6 +399,7 @@ public class CountProductActivity extends AppCompatActivity {
         context = this;
         progressDialog = new ProgressDialog(context);
         simpleDateFormat.setTimeZone(timeZone);
+        mRealm = Realm.getDefaultInstance();
 
         String uri = SPFHelp.getInstance().getString("URI", null);
         peServiceAPI = PERetrofitClient.getPEService(uri);
@@ -359,13 +412,30 @@ public class CountProductActivity extends AppCompatActivity {
         cardId = intent.getStringExtra("ClientCardCode");
         maxClientAvailable = intent.getDoubleExtra("ClientMaxAvailable", 0);
         limitType = intent.getIntExtra("LimitType", 0);
+        cardName = intent.getStringExtra("ClientCardName");
+
+        EmployeesCard card = mRealm.where(EmployeesCard.class).equalTo("cardBarcode", cardId).findFirst();
+        isUserOperator = card != null;
 
         if(isAuth){
             //with identify
             productWithAuth = (AssortmentCardSerializable) getIntent().getSerializableExtra("Product");
 
             nameProduct = productWithAuth.getName();
-            priceProduct = productWithAuth.getPrice();
+
+            if(productWithAuth.getPriceDiscount() > 0 && productWithAuth.getPriceDiscount() < productWithAuth.getPrice()){
+                productPriceDiscount.setVisibility(View.VISIBLE);
+                productPriceDiscount.setText(String.format("%.2f", productWithAuth.getPriceDiscount()).replace(",",".") + " MDL");
+                priceProduct = productWithAuth.getPriceDiscount();
+                productPrice.setText(String.format("%.2f", productWithAuth.getPrice()).replace(",",".") + " MDL");
+                productPrice.setTextSize(14);
+                productPrice.setPaintFlags(productPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            }
+            else{
+                priceProduct = productWithAuth.getPrice();
+                productPriceDiscount.setVisibility(View.GONE);
+                productPrice.setText(String.format("%.2f", productWithAuth.getPrice()).replace(",",".") + " MDL");
+            }
         }
         else{
             //without identify
@@ -373,10 +443,11 @@ public class CountProductActivity extends AppCompatActivity {
 
             nameProduct = productWithoutAuth.getName();
             priceProduct = productWithoutAuth.getPrice();
+
+            productPrice.setText(String.format("%.2f", productWithoutAuth.getPrice()).replace(",",".") + " MDL");
         }
 
         productName.setText(nameProduct);
-        productPrice.setText(String.valueOf(priceProduct) + " MDL");
 
         onToggleClickListener = new ToggleButton.OnToggleClickListener() {
             @Override
@@ -384,8 +455,8 @@ public class CountProductActivity extends AppCompatActivity {
                 if(enabled) isLeftButtonSelected = true;
                 titleCountOrSum.setText(getString(R.string.input_summ));
                 double sum = Double.parseDouble(countOrSum.getText().toString());
-                totalBill.setText(String.format("%.2f",sum / priceProduct).replace(",",".") + " L");
-
+                totalBill.setText(String.format("%.2f",round(sum / priceProduct,4)).replace(",",".") + " L");
+                SPFHelp.getInstance().putBoolean("onLeftToggleEnabled", isLeftButtonSelected);
             }
 
             @Override
@@ -393,11 +464,10 @@ public class CountProductActivity extends AppCompatActivity {
                 if (enabled) isLeftButtonSelected = false;
                 titleCountOrSum.setText(getString(R.string.input_count));
                 double count = Double.parseDouble(countOrSum.getText().toString());
-                totalBill.setText(String.format("%.2f",count * priceProduct).replace(",",".") + " MDL");
+                totalBill.setText(String.format("%.2f", round(count * priceProduct, 4)).replace(",",".") + " MDL");
+                SPFHelp.getInstance().putBoolean("onLeftToggleEnabled", isLeftButtonSelected);
             }
         };
-
-        onToggleClickListener.onLefToggleEnabled(true);
 
         toggleButton.setOnToggleClickListener(onToggleClickListener);
 
@@ -409,7 +479,7 @@ public class CountProductActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(s.equals("0")){
+                if(s.equals("0") || s.equals("")){
                     if (isLeftButtonSelected)
                         totalBill.setText("0.00 L");
                     else
@@ -418,11 +488,24 @@ public class CountProductActivity extends AppCompatActivity {
                 else{
                     if(isLeftButtonSelected){
                         double sum = Double.parseDouble(countOrSum.getText().toString());
-                        totalBill.setText(String.format("%.2f", sum / priceProduct).replace(",", ".") + " L");
+                        if(sum != 0){
+                            String countStr = String.valueOf(round(sum / priceProduct,4)).replace(",", ".");
+                            totalBill.setText(countStr.substring(0, countStr.indexOf(".") + 3) + " L");
+                        }
+                        else{
+                            totalBill.setText("0.00 L");
+                        }
+
                     }
                     else{
                         double countText = Double.parseDouble(countOrSum.getText().toString());
-                        totalBill.setText(String.format("%.2f", countText * priceProduct).replace(",", ".") + " MDL");
+                        if(countText != 0){
+                            String countStr = String.valueOf(round(countText * priceProduct, 4)).replace(",", ".");
+                            totalBill.setText(countStr.substring(0, countStr.indexOf(".") + 3) + " MDL");
+                        }
+                        else{
+                            totalBill.setText("0.00 MDL");
+                        }
                     }
                 }
             }
@@ -432,6 +515,19 @@ public class CountProductActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+//        isLeftButtonSelected = SPFHelp.getInstance().getBoolean("onLeftToggleEnabled", true);
+//
+//        if (isLeftButtonSelected){
+//            onToggleClickListener.onLefToggleEnabled(true);
+//        }
+//        else{
+//            onToggleClickListener.onRightToggleEnabled(true);
+//        }
     }
 
     private void registerBillToBack(BillRegistered bill) {
@@ -453,6 +549,16 @@ public class CountProductActivity extends AppCompatActivity {
                 RegisterBillResponse billResponse = response.body();
                 if(billResponse != null){
                     if(billResponse.getErrorCode() == 0){
+
+                        bill.setShiftNumber(billResponse.getShiftNumber());
+                        bill.setExternId(billResponse.getBillUid());
+                        bill.setShiftId(billResponse.getShiftId());
+                        bill.setBackGlobalNumber(billResponse.getBillNumber());
+
+                        Realm.getDefaultInstance().executeTransaction(realm -> {
+                            realm.insert(bill);
+                        });
+
                         if(BaseApp.isVFServiceConnected()){
                             idevice = BaseApp.getApplication().getDeviceService();
                             try {
@@ -470,12 +576,10 @@ public class CountProductActivity extends AppCompatActivity {
                             finish();
                         }
 
-                        Realm.getDefaultInstance().executeTransaction(realm -> {
-                            realm.insert(bill);
-                        });
+
                     }
                     else
-                        showErrorDialogRegisterBill("Error register bill! Code: " + billResponse.getErrorCode());
+                        showErrorDialogRegisterBill("Error register bill! Message: " + PECErrorMessage.getErrorMessage(billResponse.getErrorCode()));
                 }
                 else
                     showErrorDialogRegisterBill("Error register bill! Response is empty.");
@@ -578,25 +682,108 @@ public class CountProductActivity extends AppCompatActivity {
 //            printer.addTextInLine(fmtAddTextInLine, "", "", "This is the Print Demo", 0);
 
 
+
+
+
+//            String logo = SPFHelp.getInstance().getString("CompanyLogo","");
+//            if(!logo.equals("")){
+//                byte[] decodedString = Base64.decode(logo, Base64.DEFAULT);
+//                Bitmap photoBm = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+//                byte[] buffer = null;
+//                try {
+//                    //
+//                    InputStream is = this.getAssets().open("is_logo.png");
+//                    // get the size
+//                    int size = is.available();
+//                    // crete the array of byte
+//                    buffer = new byte[size];
+//                    is.read(buffer);
+//                    // close the stream
+//                    is.close();
+//
+//                } catch (IOException e) {
+//
+//                    // Should never happen!
+//                    throw new RuntimeException(e);
+//                }
+//                if( null != buffer) {
+//                    Bitmap photoBuf = BitmapFactory.decodeByteArray(buffer, 0, buffer.length);
+//                    Bundle fmtImage = new Bundle();
+//                    fmtImage.putInt("offset", (384 - 50) / 2);
+//                    fmtImage.putInt("width", photoBm.getWidth());  // bigger then actual, will print the actual
+//                    fmtImage.putInt("height", photoBm.getHeight() + 10); // bigger then actual, will print the actual
+//                    printer.addImage(fmtImage, decodedString);
+//                }
+//            }
+
+
             format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24);
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
             printer.addText(format, "\"" + SPFHelp.getInstance().getString("CompanyName", "") + "\"");
 
             printer.addText(format, "IDNO: " + SPFHelp.getInstance().getString("CompanyIDNO", ""));
-            printer.addText(format, "Inr.Nr: " + SPFHelp.getInstance().getString("FiscalCode", ""));
-            printer.addText(format, "");
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24);
-            printer.addTextInLine( fmtAddTextInLine, "00001" , "", "01 #", 0);
 
+            String headerFull = SPFHelp.getInstance().getString("StationAddress","");
+            if(!headerFull.equals("")) {
+                String[] subStr = headerFull.split(" ");
+                String firstLine = "";
+
+                for(int i = 0; i < subStr.length; i++){
+                    if(i == 0){
+                        firstLine = subStr[0];
+                        continue;
+                    }
+                    if(firstLine.length() < 32) {
+                        String nextLine = subStr[i];
+                        if((firstLine + " " + nextLine).length() > 32){
+                            printer.addText(format, firstLine);
+                            firstLine = nextLine;
+                        }
+                        else
+                            firstLine = firstLine+ " " + nextLine;
+                    }
+                    if(i == subStr.length - 1)
+                        printer.addText(format, firstLine);
+                }
+            }
+            FiscalKey key = mRealm.where(FiscalKey.class).findFirst();
+            String nrReg = "";
+            if(key == null)
+                nrReg = SPFHelp.getInstance().getString("LicenseCode","");
+            else
+                nrReg = SPFHelp.getInstance().getString("FiscalCode","");
+
+            printer.addText(format, "Inr.Nr: " + nrReg);
+            printer.addText(format, "***");
+
+            int n2 = bill.getShiftNumber();
+            String numberShiftToString = "";
+            int length1 = (int)(Math.log10(n2)+1);
+
+            if (length1 == 1)
+                numberShiftToString = "0000" + n2;
+            else if (length1 == 2)
+                numberShiftToString = "000" + n2;
+            else if (length1 == 3)
+                numberShiftToString = "00" + n2;
+            else if (length1 == 4)
+                numberShiftToString = "0" + n2;
+            else
+                numberShiftToString = "" + n2;
+
+            printer.addTextInLine(fmtAddTextInLine, numberShiftToString , "", "01 #", 0);
 
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
             printer.addText(format, "#-" + SPFHelp.getInstance().getString("Cash", "--"));
             printer.addText(format, "#-" + SPFHelp.getInstance().getString("Owner", "--"));
+
+            printer.feedLine(2);
+
 //            printer.addTextInLine( fmtAddTextInLine, "#-" + SPFHelp.getInstance().getString("Cash", "Casa nui"), "", "#", 0);
 //            printer.addTextInLine( fmtAddTextInLine, "#-" + SPFHelp.getInstance().getString("Owner", "Autor nui"), "", "#", 0);
 //            printer.addTextInLine( fmtAddTextInLine, "#-Id: 00000" , "", "#", 0);
-            printer.addText(format, "");
 
 //            // left
 
@@ -609,38 +796,93 @@ public class CountProductActivity extends AppCompatActivity {
 
 
 
-            List<LineBill> listProducts = bill.getLines();
+            LineBill line = bill.getLines().get(0);
 
-            for(LineBill line : listProducts){
-                printer.addTextInLine( fmtAddTextInLine, line.getName() , "",  String.format("%.2f", line.getCount())+ " X " + String.format("%.2f", line.getPrice())  , 0);
-                format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.RIGHT );
-                printer.addText(format, String.format("%.2f", line.getSum()));
-            }
-
+            String count = String.valueOf(line.getCount()).replace(",", ".");
+            printer.addTextInLine(fmtAddTextInLine, "" , "",   count.substring(0, count.indexOf(".") + 3) + " Litri X " + String.format("%.2f", line.getPrice()).replace(",", ".") + "  ", 0);
+//            String tvaCode = line.getVatPercent() == 20? " A" : line.getVatPercent() == 8? " B" : " C";
+            printer.addTextInLine(fmtAddTextInLine, line.getName() , "",  String.format("%.2f", round(line.getCount() * line.getPrice(), 4)).replace(",", "."), 0);
             printer.addText(format, "--------------------------------");
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_DH_24_48_IN_BOLD);
-            printer.addTextInLine( fmtAddTextInLine, "TOTAL" , "", String.format("%.2f", bill.getPaymentBills().get(0).getSum()), 0);
+            printer.addTextInLine(fmtAddTextInLine, "TOTAL" , "", String.format("%.2f", bill.getPaymentBills().get(0).getSum()).replace(",","."), 0);
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24);
-            printer.addTextInLine( fmtAddTextInLine, "Contul clientului" , "", String.format("%.2f", bill.getPaymentBills().get(0).getSum()), 0);
+            if(line.getPrice() - line.getDiscountedPrice() > 0){
+                printer.addTextInLine(fmtAddTextInLine, "Reducere:" , "",  String.format("%.2f", round(line.getCount() * line.getPrice() - line.getSum(), 4)).replace(",", ".") + "  ", 0);
+            }
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24);
-            printer.addTextInLine( fmtAddTextInLine, "" , "V A  M U L T U M I M", "", 0);
+            printer.feedLine(2);
 
-            printer.addTextInLine( fmtAddTextInLine, "" , "1 ARTICOL", "", 0);
+            double vat = line.getVatPercent();
+            if(vat == 20.00){
+                printer.addTextInLine(fmtAddTextInLine, "TVA A=20.00%" , "", String.format("%.2f", round(bill.getPaymentBills().get(0).getSum() - (bill.getPaymentBills().get(0).getSum() / 1.2), 4)).replace(",", "."), 0);
+            }
+            else if(vat == 8.00){
+                printer.addTextInLine(fmtAddTextInLine, "TVA B=8.00%" , "", String.format("%.2f", round(bill.getPaymentBills().get(0).getSum() - (bill.getPaymentBills().get(0).getSum() / 1.08),4)).replace(",", "."), 0);
+            }
+            printer.addTextInLine(fmtAddTextInLine, "Cont client" , "", String.format("%.2f", bill.getPaymentBills().get(0).getSum()).replace(",", "."), 0);
+            printer.feedLine(2);
+            printer.addTextInLine(fmtAddTextInLine, "#Card: " + cardName , "", "", 0);
+            printer.feedLine(2);
 
-            printer.addTextInLine( fmtAddTextInLine, "0001" , "", simpleDateFormat.format(bill.getDate()), 0);
+            fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24);
+            printer.addTextInLine(fmtAddTextInLine, "" , "V A  M U L T U M I M !", "", 0);
 
-            Realm mRealm = Realm.getDefaultInstance();
-            FiscalKey key = mRealm.where(FiscalKey.class).findFirst();
+            printer.addTextInLine(fmtAddTextInLine, "" , "1 ARTICOL", "", 0);
+
+            int n = 0;
+
+
+
+            if(key != null) n = bill.getGlobalNumberFisc();
+            else n = bill.getGlobalNumberNeFisc();
+
+            String numberToString = "";
+            int length = (int)(Math.log10(n)+1);
+
+            if (length == 1)
+                numberToString = "0000" + n;
+            else if (length == 2)
+                numberToString = "000" + n;
+            else if (length == 3)
+                numberToString = "00" + n;
+            else if (length == 4)
+                numberToString = "0" + n;
+            else
+                numberToString = "" + n;
+
+            printer.addTextInLine(fmtAddTextInLine, numberToString , "", simpleDateFormat.format(bill.getDate()), 0);
+
             format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            if(key == null) printer.addText(format, "BON NEFISCAL!");
-            else printer.addText(format, "BON FISCAL!");
+            if(key == null) {
+                printer.addText(format, "BON NEFISCAL!");
+
+
+
+//                format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24);
+//                printer.addText(format, "--------------------------------");
+            }
+            else {
+                printer.addText(format, "BON FISCAL!");
+
+                Bundle fmtAddQRCode = new Bundle();
+                fmtAddQRCode.putInt(PrinterConfig.addQrCode.Offset.BundleName, 128);
+                fmtAddQRCode.putInt(PrinterConfig.addQrCode.Height.BundleName, 128);
+                printer.addQrCode(fmtAddQRCode, "https://eservicii.md/clientportal/auth/fiscal/" + bill.getExternId());
+
+                fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.SMALL_16_16);
+                printer.addTextInLine(fmtAddTextInLine, "", "Scaneaza codul pentru vizualizarea\n bonului online!", "", 0);
+            }
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24 );
-            printer.addTextInLine( fmtAddTextInLine, "" , "IntelectSoft S.R.L.", "", 0);
+            printer.addTextInLine(fmtAddTextInLine, "" , "IntelectSoft S.R.L.", "", 0);
+
+            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
+            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24 );
+//            printer.addText(format, "--------------------------------");
 
 //            Bundle fmtAddBarCode = new Bundle();
 //            fmtAddBarCode.putInt( PrinterConfig.addBarCode.Alignment.BundleName, PrinterConfig.addBarCode.Alignment.RIGHT );
@@ -702,12 +944,12 @@ public class CountProductActivity extends AppCompatActivity {
 //                    "",
 //                    0);
 
-            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
+//            format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
 //            format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.NORMAL_24_24 );
-//            printer.addText(format, "---------X-----------X----------");
-
             printer.addText(format, "\n");
-            printer.feedLine(3);
+            printer.feedLine(2);
+
+//            printer.feedLine(3);
             // start print here
             printer.startPrint(new MyListener());
 
@@ -719,6 +961,8 @@ public class CountProductActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
+
+
 
 
     /**
@@ -849,7 +1093,7 @@ public class CountProductActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            Log.d("TAG", msg.getData().getString("msg"));
+            Log.d("PetrolExpert_BaseApp", msg.getData().getString("msg"));
             Toast.makeText(context, msg.getData().getString("msg"), Toast.LENGTH_SHORT).show();
 
 

@@ -104,7 +104,7 @@ public class ToggleButton extends View {
     } //
 
     // Here we initiliaze and calculates some values for animations
-    private void init() {
+    public void init() {
 
         if (firstIcon == null || secondIcon == null && width  == 0 && height == 0)
             return;
@@ -198,7 +198,6 @@ public class ToggleButton extends View {
                 float x = event.getX();
                 float y = event.getY();
                 if (x <= rect.width() && y <= rect.height()) {
-
                     clickOnButton();
                 }
 
@@ -282,15 +281,20 @@ public class ToggleButton extends View {
         this.onToggleClickListener = onToggleClickListener;
     }
 
+    public void setOnToggle (boolean toggle) {
+        this.toggle = toggle;
+        clickOnButton();
+    }
 
 
     /**
      * This is jack animation here we caculated distance and height and width of the button
      * and then according to their we make the animations
      * */
-    private void playAnimation1() {
+    public void playAnimation1() {
         // This is jack animation
-        roundRect.setEmpty();
+        if(roundRect != null)
+            roundRect.setEmpty();
         rectF.setEmpty();
         AnimatorSet animatorSet = new AnimatorSet();
         if (animatorSet.isRunning()) {

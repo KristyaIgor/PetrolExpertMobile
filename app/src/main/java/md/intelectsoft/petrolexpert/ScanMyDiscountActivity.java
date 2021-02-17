@@ -37,18 +37,23 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.realm.Realm;
 import md.intelectsoft.petrolexpert.Utils.SPFHelp;
+import md.intelectsoft.petrolexpert.network.pe.PECErrorMessage;
 import md.intelectsoft.petrolexpert.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolexpert.network.pe.PEServiceAPI;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentCard;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentCardSerializable;
 import md.intelectsoft.petrolexpert.network.pe.result.GetCardInfo;
 import md.intelectsoft.petrolexpert.network.pe.result.GetCardInfoSerializable;
+import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.EmployeesCard;
 import md.intelectsoft.petrolexpert.verifone.Utilities.DeviceHelper;
 import md.intelectsoft.petrolexpert.verifone.transaction.AppParams;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static md.intelectsoft.petrolexpert.ClientMyDiscountCardCorporativActivity.round;
 
 @SuppressLint("NonConstantResourceId")
 public class ScanMyDiscountActivity extends AppCompatActivity {
@@ -61,6 +66,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
     private Context context;
+    Realm mRealm;
 
     private boolean isVerifone;
     private String deviceId;
@@ -96,6 +102,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         deviceId = SPFHelp.getInstance().getString("deviceId", "");
         String uri = SPFHelp.getInstance().getString("URI", null);
         peServiceAPI = PERetrofitClient.getPEService(uri);
+        mRealm = Realm.getDefaultInstance();
 
         boolean isDiscount = getIntent().getBooleanExtra("isDisc", false);
 
@@ -154,8 +161,6 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         else{
             titleApp.setText(titlePhone);
         }
-
-
     }
 
     private void getCardInfoPEC (String cardId){
@@ -181,66 +186,82 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
 
                 if(getCardInfo != null){
                     if(getCardInfo.getErrorCode() == 0){
-                        if(getCardInfo.getAssortiment() != null && getCardInfo.getAssortiment().size() > 0){
-                            List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
-                            for (AssortmentCard item : getCardInfo.getAssortiment()){
-                                AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
-                                        item.getAssortimentID(),
-                                        item.getAssortmentCode(),
-                                        item.getDiscount(),
-                                        item.getName(),
-                                        item.getPrice(),
-                                        item.getPriceLineID(),
-                                        item.getAdditionalLimit(),
-                                        item.getCardBalance(),
-                                        item.getDailyLimit(),
-                                        item.getDailyLimitConsumed(),
-                                        item.getLimit(),
-                                        item.getMonthlyLimit(),
-                                        item.getMonthlyLimitConsumed(),
-                                        item.getWeeklyLimit(),
-                                        item.getWeeklyLimitConsumed()
-                                );
-                                assortmentSerializables.add(assortmentSerializable);
-                            }
-
-                            GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
-                                    getCardInfo.getAllowedBalance(),
-                                    assortmentSerializables,
-                                    getCardInfo.getBalance(),
-                                    getCardInfo.getBlockedAmount(),
-                                    getCardInfo.getCardEnabled(),
-                                    getCardInfo.getCardName(),
-                                    getCardInfo.getCardNumber(),
-                                    getCardInfo.getCustomerEnabled(),
-                                    getCardInfo.getCustomerId(),
-                                    getCardInfo.getCustomerName(),
-                                    getCardInfo.getDailyLimit(),
-                                    getCardInfo.getDailyLimitConsumed(),
-                                    getCardInfo.getLimitType(),
-                                    getCardInfo.getMonthlyLimit(),
-                                    getCardInfo.getMonthlyLimitConsumed(),
-                                    getCardInfo.getPhone(),
-                                    getCardInfo.getRefusedRefillClientAccount(),
-                                    getCardInfo.getTankCapacity(),
-                                    getCardInfo.getWeeklyLimit(),
-                                    getCardInfo.getWeeklyLimitConsumed()
-                            );
-
-                            Intent intent = new Intent(ScanMyDiscountActivity.this, ClientMyDiscountCardCorporativActivity.class);
-                            intent.putExtra("ResponseClient", cardInfoSerializable);
-                            intent.putExtra("ClientCardCode", getCardInfo.getCardBarcode());
-                            startActivity(intent);
+                        EmployeesCard card = mRealm.where(EmployeesCard.class).equalTo("cardBarcode", getCardInfo.getCardBarcode()).findFirst();
+                        if(card != null){
+                            // Cardul dat este cardul de serviciu si arunc la pagina cu assortiment simplu si achitare diferita de cea de contul clientului
                             progressDialog.dismiss();
-                            finish();
+                            new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                    .setTitle(getString(R.string.attention_dialog_title))
+                                    .setCancelable(false)
+                                    .setMessage("De pe acest card temporar nu pot fi efectuate vinzari!" + (card.getUserName().length() > 0 ? "El apartine " + card.getUserName() : "" + " Codul cardului: ") + card.getCardNumber())
+                                    .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
+                                        finish();
+                                    })
+                                    .show();
                         }
+                        else {
+                            if (getCardInfo.getAssortiment() != null && getCardInfo.getAssortiment().size() > 0) {
+                                List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
+                                for (AssortmentCard item : getCardInfo.getAssortiment()) {
+                                    AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
+                                            item.getAssortimentID(),
+                                            item.getAssortmentCode(),
+                                            item.getDiscount(),
+                                            item.getPriceDiscounted() == 0 ? item.getPrice() : item.getPriceDiscounted(),
+                                            item.getName(),
+                                            item.getPrice(),
+                                            item.getPriceLineID(),
+                                            item.getAdditionalLimit(),
+                                            item.getCardBalance(),
+                                            item.getDailyLimit(),
+                                            item.getDailyLimitConsumed(),
+                                            item.getLimit(),
+                                            item.getMonthlyLimit(),
+                                            item.getMonthlyLimitConsumed(),
+                                            item.getWeeklyLimit(),
+                                            item.getWeeklyLimitConsumed(),
+                                            item.getVatPercent());
+                                    assortmentSerializables.add(assortmentSerializable);
+                                }
 
+                                GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
+                                        getCardInfo.getAllowedBalance(),
+                                        assortmentSerializables,
+                                        getCardInfo.getBalance(),
+                                        getCardInfo.getBlockedAmount(),
+                                        getCardInfo.getCardEnabled(),
+                                        getCardInfo.getCardName(),
+                                        getCardInfo.getCardNumber(),
+                                        getCardInfo.getCustomerEnabled(),
+                                        getCardInfo.getCustomerId(),
+                                        getCardInfo.getCustomerName(),
+                                        getCardInfo.getDailyLimit(),
+                                        getCardInfo.getDailyLimitConsumed(),
+                                        getCardInfo.getLimitType(),
+                                        getCardInfo.getMonthlyLimit(),
+                                        getCardInfo.getMonthlyLimitConsumed(),
+                                        getCardInfo.getPhone(),
+                                        getCardInfo.getRefusedRefillClientAccount(),
+                                        getCardInfo.getTankCapacity(),
+                                        getCardInfo.getWeeklyLimit(),
+                                        getCardInfo.getWeeklyLimitConsumed()
+                                );
+
+                                Intent intent = new Intent(ScanMyDiscountActivity.this, ClientMyDiscountCardCorporativActivity.class);
+                                intent.putExtra("ResponseClient", cardInfoSerializable);
+                                intent.putExtra("ClientCardCode", getCardInfo.getCardBarcode());
+                                intent.putExtra("ClientCardName", getCardInfo.getCardNumber() + "/" + getCardInfo.getCardName());
+                                startActivity(intent);
+                                progressDialog.dismiss();
+                                finish();
+                            }
+                        }
                     }
                     else{
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                 .setTitle(getString(R.string.attention_dialog_title))
-                                .setMessage(getString(R.string.error_check_code_msg) + getCardInfo.getErrorMessage())
+                                .setMessage(getString(R.string.error_check_code_msg) + PECErrorMessage.getErrorMessage(getCardInfo.getErrorCode()))
                                 .setCancelable(false)
                                 .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                     counter = 0;
@@ -457,7 +478,7 @@ public class ScanMyDiscountActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            Log.d("TAG", msg.getData().getString("msg"));
+            Log.d("PetrolExpert_BaseApp", msg.getData().getString("msg"));
             getCardInfoPEC(msg.getData().getString("msg"));
         }
     };

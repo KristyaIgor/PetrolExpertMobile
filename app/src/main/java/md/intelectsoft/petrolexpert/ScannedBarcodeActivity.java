@@ -25,6 +25,9 @@ import com.google.android.gms.vision.barcode.BarcodeDetector;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +41,8 @@ import md.intelectsoft.petrolexpert.network.pe.result.GetCardInfoSerializable;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static md.intelectsoft.petrolexpert.ClientMyDiscountCardCorporativActivity.round;
 
 public class ScannedBarcodeActivity extends AppCompatActivity {
 
@@ -142,7 +147,7 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            Log.d("TAG", msg.getData().getString("msg"));
+            Log.d("PetrolExpert_BaseApp", msg.getData().getString("msg"));
             getCardInfoPEC(msg.getData().getString("msg"));
         }
     };
@@ -178,16 +183,17 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
         call.enqueue(new Callback<GetCardInfo>() {
             @Override
             public void onResponse(Call<GetCardInfo> call, Response<GetCardInfo> response) {
-                GetCardInfo getAssortment = response.body();
-                if(getAssortment != null){
-                    if(getAssortment.getErrorCode() == 0){
-                        if(getAssortment.getAssortiment() != null && getAssortment.getAssortiment().size() > 0){
+                GetCardInfo getCardInfo = response.body();
+                if(getCardInfo != null){
+                    if(getCardInfo.getErrorCode() == 0){
+                        if(getCardInfo.getAssortiment() != null && getCardInfo.getAssortiment().size() > 0){
                             List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
-                            for (AssortmentCard item : getAssortment.getAssortiment()){
+                            for (AssortmentCard item : getCardInfo.getAssortiment()){
                                 AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
                                         item.getAssortimentID(),
                                         item.getAssortmentCode(),
                                         item.getDiscount(),
+                                        item.getPriceDiscounted() == 0 ? item.getPrice() : item.getPriceDiscounted(),
                                         item.getName(),
                                         item.getPrice(),
                                         item.getPriceLineID(),
@@ -199,37 +205,38 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
                                         item.getMonthlyLimit(),
                                         item.getMonthlyLimitConsumed(),
                                         item.getWeeklyLimit(),
-                                        item.getWeeklyLimitConsumed()
-                                );
+                                        item.getWeeklyLimitConsumed(),
+                                        item.getVatPercent());
                                 assortmentSerializables.add(assortmentSerializable);
                             }
 
                             GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
-                                    getAssortment.getAllowedBalance(),
+                                    getCardInfo.getAllowedBalance(),
                                     assortmentSerializables,
-                                    getAssortment.getBalance(),
-                                    getAssortment.getBlockedAmount(),
-                                    getAssortment.getCardEnabled(),
-                                    getAssortment.getCardName(),
-                                    getAssortment.getCardNumber(),
-                                    getAssortment.getCustomerEnabled(),
-                                    getAssortment.getCustomerId(),
-                                    getAssortment.getCustomerName(),
-                                    getAssortment.getDailyLimit(),
-                                    getAssortment.getDailyLimitConsumed(),
-                                    getAssortment.getLimitType(),
-                                    getAssortment.getMonthlyLimit(),
-                                    getAssortment.getMonthlyLimitConsumed(),
-                                    getAssortment.getPhone(),
-                                    getAssortment.getRefusedRefillClientAccount(),
-                                    getAssortment.getTankCapacity(),
-                                    getAssortment.getWeeklyLimit(),
-                                    getAssortment.getWeeklyLimitConsumed()
+                                    getCardInfo.getBalance(),
+                                    getCardInfo.getBlockedAmount(),
+                                    getCardInfo.getCardEnabled(),
+                                    getCardInfo.getCardName(),
+                                    getCardInfo.getCardNumber(),
+                                    getCardInfo.getCustomerEnabled(),
+                                    getCardInfo.getCustomerId(),
+                                    getCardInfo.getCustomerName(),
+                                    getCardInfo.getDailyLimit(),
+                                    getCardInfo.getDailyLimitConsumed(),
+                                    getCardInfo.getLimitType(),
+                                    getCardInfo.getMonthlyLimit(),
+                                    getCardInfo.getMonthlyLimitConsumed(),
+                                    getCardInfo.getPhone(),
+                                    getCardInfo.getRefusedRefillClientAccount(),
+                                    getCardInfo.getTankCapacity(),
+                                    getCardInfo.getWeeklyLimit(),
+                                    getCardInfo.getWeeklyLimitConsumed()
                             );
 
                             Intent intent = new Intent(ScannedBarcodeActivity.this, ClientMyDiscountCardCorporativActivity.class);
                             intent.putExtra("ResponseClient", cardInfoSerializable);
-                            intent.putExtra("ClientCardCode", getAssortment.getCardBarcode());
+                            intent.putExtra("ClientCardCode", getCardInfo.getCardBarcode());
+                            intent.putExtra("ClientCardName", getCardInfo.getCardNumber() + "/" + getCardInfo.getCardName());
                             startActivity(intent);
                             progressDialog.dismiss();
                             finish();
@@ -239,13 +246,13 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(ScannedBarcodeActivity.this, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                 .setTitle("Attention!")
-                                .setMessage("Error check MyDiscount code! Message: " + getAssortment.getErrorMessage())
+                                .setMessage("Error check MyDiscount code! Message: " + getCardInfo.getErrorMessage())
                                 .setCancelable(false)
                                 .setPositiveButton("OK", (dialogInterface, i) -> {
                                     counter = 0;
                                 })
                                 .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                    getCardInfoPEC(cardId);
+                                    getCardInfoPEC(getCardInfo.getCardBarcode());
                                 }))
                                 .show();
                     }
@@ -260,7 +267,7 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
                                 counter = 0;
                             })
                             .setNegativeButton("Retry",((dialogInterface, i) -> {
-                                getCardInfoPEC(cardId);
+                                getCardInfoPEC(getCardInfo.getCardBarcode());
                             }))
                             .show();
                 }
@@ -279,12 +286,32 @@ public class ScannedBarcodeActivity extends AppCompatActivity {
                             counter = 0;
                         })
                         .setNegativeButton("Retry",((dialogInterface, i) -> {
-                            getCardInfoPEC(cardId);
+                            getCardInfoPEC(getMD5HashCardCode(cardId));
                         }))
                         .show();
             }
         });
     }
+
+    public static String getMD5HashCardCode(String message) {
+        MessageDigest m = null;
+        try {
+            m = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        m.reset();
+        m.update(message.getBytes());
+        byte[] digest = m.digest();
+        BigInteger bigInt = new BigInteger(1,digest);
+        String hashtext = bigInt.toString(16);
+// Now we need to zero pad it if you actually want the full 32 chars.
+        while(hashtext.length() < 32 ){
+            hashtext = "0"+hashtext;
+        }
+        return hashtext;
+    }
+
 }
 
 

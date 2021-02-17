@@ -15,9 +15,9 @@ public class GetStationSettings {
     @SerializedName("Assortment")
     @Expose
     private List<AssortmentStation> assortment = null;
-//    @SerializedName("EmployeesCards")
-//    @Expose
-//    private List<EmployeesCard> employeesCards = null;
+    @SerializedName("EmployeesCards")
+    @Expose
+    private List<EmployeesCard> employeesCards = null;
 //    @SerializedName("Guns")
 //    @Expose
 //    private List<Object> guns = null;
@@ -49,13 +49,13 @@ public class GetStationSettings {
         this.assortment = assortment;
     }
 
-//    public List<EmployeesCard> getEmployeesCards() {
-//        return employeesCards;
-//    }
-//
-//    public void setEmployeesCards(List<EmployeesCard> employeesCards) {
-//        this.employeesCards = employeesCards;
-//    }
+    public List<EmployeesCard> getEmployeesCards() {
+        return employeesCards;
+    }
+
+    public void setEmployeesCards(List<EmployeesCard> employeesCards) {
+        this.employeesCards = employeesCards;
+    }
 //
 //    public List<Object> getGuns() {
 //        return guns;

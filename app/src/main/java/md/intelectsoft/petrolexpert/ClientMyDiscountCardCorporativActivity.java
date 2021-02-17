@@ -47,7 +47,7 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
 
     AssortmentCardAdapter adapter;
     Context context;
-    String cardId;
+    String cardId, cardName;
 
     @OnClick(R.id.layoutCloseClientInfoActivity) void onCloseActivity(){
         finish();
@@ -66,6 +66,7 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
         Intent intent = getIntent();
         GetCardInfoSerializable cardInfoSerializable = (GetCardInfoSerializable) intent.getSerializableExtra("ResponseClient");
         cardId = intent.getStringExtra("ClientCardCode");
+        cardName = intent.getStringExtra("ClientCardName");
 
 
         String typeLimit = "";
@@ -75,9 +76,9 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
             typeLimit = "L";
         }
 
-        clientLimitDay.setText(cardInfoSerializable.getDailyLimit() == 0 ? "0 " + typeLimit : String.format("%.2f",cardInfoSerializable.getDailyLimit()).replace(",",".") + typeLimit);
-        clientLimitWeek.setText(cardInfoSerializable.getWeeklyLimit() == 0 ? "0 " + typeLimit : String.format("%.2f",cardInfoSerializable.getWeeklyLimit()).replace(",",".") + typeLimit);
-        clientLimitMonth.setText(cardInfoSerializable.getMonthlyLimit() == 0 ? "0 "+ typeLimit : String.format("%.2f",cardInfoSerializable.getMonthlyLimit()).replace(",",".") + typeLimit);
+        clientLimitDay.setText(cardInfoSerializable.getDailyLimit() == 0 ? "0 ": String.format("%.2f",cardInfoSerializable.getDailyLimit()).replace(",","."));
+        clientLimitWeek.setText(cardInfoSerializable.getWeeklyLimit() == 0 ? "0 ": String.format("%.2f",cardInfoSerializable.getWeeklyLimit()).replace(",","."));
+        clientLimitMonth.setText(cardInfoSerializable.getMonthlyLimit() == 0 ? "0 ": String.format("%.2f",cardInfoSerializable.getMonthlyLimit()).replace(",","."));
 
         if(cardInfoSerializable.getDailyLimit() == 0 && cardInfoSerializable.getWeeklyLimit() == 0 && cardInfoSerializable.getMonthlyLimit() == 0 ){
             clientRemainDay.setVisibility(View.GONE);
@@ -110,7 +111,7 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
 
         clientAmountType.setText(getString(R.string.suma_disponibila));
         clientCardName.setText(cardInfoSerializable.getCustomerName() + " - " + cardInfoSerializable.getCardNumber() + "/" + cardInfoSerializable.getCardName());
-        clientAmount.setText(String.format("%.2f",cardInfoSerializable.getAllowedBalance()));
+        clientAmount.setText(String.format("%.2f",cardInfoSerializable.getAllowedBalance()).replace(",", "."));
 
         adapter = new AssortmentCardAdapter(context, R.layout.list_assortiment_view, cardInfoSerializable.getAssortiment());
         clientProducts.setAdapter(adapter);
@@ -123,6 +124,7 @@ public class ClientMyDiscountCardCorporativActivity extends AppCompatActivity {
             count.putExtra("ClientCardCode", cardId);
             count.putExtra("ClientMaxAvailable", cardInfoSerializable.getAllowedBalance());
             count.putExtra("LimitType", cardInfoSerializable.getLimitType() == LimitCardEnum.MDL ? LimitCardEnum.MDL : LimitCardEnum.Liter);
+            count.putExtra("ClientCardName", cardName);
             startActivityForResult(count,164);
         });
     }

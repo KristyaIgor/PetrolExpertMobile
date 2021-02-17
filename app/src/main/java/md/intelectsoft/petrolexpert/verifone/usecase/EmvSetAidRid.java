@@ -43,9 +43,9 @@ public class EmvSetAidRid {
             isSuccess = false;
             try {
                 isSuccess = iemv.updateAID(3, 1, null );
-                Log.d("TAG", "Clear AID (smart AID):" + isSuccess);
+                Log.d("PetrolExpert_BaseApp", "Clear AID (smart AID):" + isSuccess);
                 isSuccess = iemv.updateAID(3, 2, null );
-                Log.d("TAG", "Clear AID (CTLS):" + isSuccess);
+                Log.d("PetrolExpert_BaseApp", "Clear AID (CTLS):" + isSuccess);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
@@ -157,12 +157,12 @@ public class EmvSetAidRid {
         try {
             for( int i=0; i < 3; i++ ) {
                 isSuccess = iemv.updateAID(emvParamAppUMSList[i].flagAppendRemoveClear, emvParamAppUMSList[i].aidType, emvParamAppUMSList[i].getTlvString());
-                Log.d("TAG", emvParamAppUMSList[i].getComment() + ": " + isSuccess);
+                Log.d("PetrolExpert_BaseApp", emvParamAppUMSList[i].getComment() + ": " + isSuccess);
 
                 if (isSuccess) {
-                    Log.d("TAG","update AID success:" + emvParamAppUMSList[i].getComment());
+                    Log.d("PetrolExpert_BaseApp","update AID success:" + emvParamAppUMSList[i].getComment());
                 } else {
-                    Log.e("TAG","update AID false:" + emvParamAppUMSList[i].getComment());
+                    Log.e("PetrolExpert_BaseApp","update AID false:" + emvParamAppUMSList[i].getComment());
                 }
             }
         } catch (RemoteException e) {
@@ -311,12 +311,12 @@ public class EmvSetAidRid {
                 } catch (RemoteException e) {
                     e.printStackTrace();
                 }
-                Log.d("TAG", "" + isSuccess);
+                Log.d("PetrolExpert_BaseApp", "" + isSuccess);
 
                 if (isSuccess) {
-                    Log.d("TAG", "update AID success");
+                    Log.d("PetrolExpert_BaseApp", "update AID success");
                 } else {
-                    Log.e("TAG", "updateAID false");
+                    Log.e("PetrolExpert_BaseApp", "updateAID false");
                 }
             }
             aidList = AID_CTLS_Card;
@@ -345,7 +345,7 @@ public class EmvSetAidRid {
             isSuccess = false;
             try {
                 isSuccess = iemv.updateRID(3, null );
-                Log.d("TAG", "Clear RID :" + isSuccess);
+                Log.d("PetrolExpert_BaseApp", "Clear RID :" + isSuccess);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

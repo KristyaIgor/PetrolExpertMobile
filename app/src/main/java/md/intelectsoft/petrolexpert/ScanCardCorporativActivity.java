@@ -19,6 +19,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.provider.Settings;
@@ -31,10 +32,12 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.vfi.smartpos.deviceservice.aidl.IBeeper;
 import com.vfi.smartpos.deviceservice.aidl.IRFCardReader;
 import com.vfi.smartpos.deviceservice.aidl.RFSearchListener;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -45,17 +48,23 @@ import java.util.Locale;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import io.realm.Realm;
 import md.intelectsoft.petrolexpert.Utils.LocaleHelper;
 import md.intelectsoft.petrolexpert.Utils.SPFHelp;
+import md.intelectsoft.petrolexpert.network.pe.PECErrorMessage;
 import md.intelectsoft.petrolexpert.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolexpert.network.pe.PEServiceAPI;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentCard;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentCardSerializable;
 import md.intelectsoft.petrolexpert.network.pe.result.GetCardInfo;
 import md.intelectsoft.petrolexpert.network.pe.result.GetCardInfoSerializable;
+import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.EmployeesCard;
+import md.intelectsoft.petrolexpert.verifone.Utilities.DeviceHelper;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+
+import static md.intelectsoft.petrolexpert.ClientMyDiscountCardCorporativActivity.round;
 
 @SuppressLint("NonConstantResourceId")
 public class ScanCardCorporativActivity extends AppCompatActivity {
@@ -72,15 +81,17 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     IntentFilter writeTagFilters[];
 
     IRFCardReader irfCardReader;
+    IBeeper iBeeper;
 
-    //S50卡
+    Realm mRealm;
+    CountDownTimer countDownTimerPg = null;
+
     public final static int S50_CARD = 0x00;
-    //S70卡
     public final static int S70_CARD = 0x01;
-    //CPU卡
+    public final static int PRO_CARD = 0x02;
+    public final static int S50_PRO_CARD = 0x03;
+    public final static int S70_PRO_CARD = 0x04;
     public final static int CPU_CARD = 0x05;
-
-    int interval = 30;
 
     @OnClick(R.id.imageScanCameraCardCorp) void onScanCamera(){
         Intent scanIntent = new Intent(context, ScanMyDiscountActivity.class);
@@ -109,19 +120,45 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         String uri = SPFHelp.getInstance().getString("URI", null);
         peServiceAPI = PERetrofitClient.getPEService(uri);
 
+        mRealm = Realm.getDefaultInstance();
+
         isVerifone = BaseApp.isVFServiceConnected();
         if(isVerifone){
-
             try {
-                irfCardReader = BaseApp.getApplication().getDeviceService().getRFCardReader();
+
+//                irfCardReader = BaseApp.getApplication().getDeviceService().getRFCardReader();
+                irfCardReader = BaseApp.getIrfCardReader();
+                iBeeper = BaseApp.getApplication().getDeviceService().getBeeper();
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-
+            startProgressBar(30000);
             try {
+                irfCardReader.searchCard(new RFSearchListener.Stub() {
+                    @Override
+                    public void onCardPass(int cardType) throws RemoteException {
+                        iBeeper.startBeep(200);
+                        switch (cardType){
+                            case S50_CARD : Log.i("Petrol_TAG", "onCardPass type S50"); break;
+                            case S70_CARD : Log.i("Petrol_TAG", "onCardPass type S70"); break;
+                            case PRO_CARD : Log.i("Petrol_TAG", "onCardPass type PRO"); break;
+                            case S50_PRO_CARD : Log.i("Petrol_TAG", "onCardPass type S50 PRO"); break;
+                            case S70_PRO_CARD : Log.i("Petrol_TAG", "onCardPass type S70 PRO"); break;
+                            case CPU_CARD : Log.i("Petrol_TAG", "onCardPass type CPU"); break;
+                        }
+                    }
 
-                irfCardReader.searchCard(rfSearchListener, 30);
-                startProgressBar();
+                    @Override
+                    public void onFail(int error, String message) throws RemoteException {
+                        Log.i("Petrol_TAG", "Check card fail + error code: " + error + " error message: " + message);
+                    }
+
+                    @Override
+                    public IBinder asBinder() {
+                        Log.i("Petrol_TAG", "asBinder retunerd!");
+                        return super.asBinder();
+                    }
+                }, 30);
 
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -154,45 +191,55 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             IntentFilter tagDetected = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
             tagDetected.addCategory(Intent.CATEGORY_DEFAULT);
             writeTagFilters = new IntentFilter[] { tagDetected };
-
         }
     }
 
-    private void startProgressBar() {
-        progressBarScanCard.setMax(30000);
-        new CountDownTimer(30000, 1) {
+    private void startProgressBar(int progress) {
+        progressBarScanCard.setMax(progress);
+        countDownTimerPg = new CountDownTimer(progress, 1) {
 
             public void onTick(long millisUntilFinished) {
                 progressBarScanCard.setProgress((int)millisUntilFinished);
             }
 
             public void onFinish() {
-                if(!isVerifone)
-                    finish();
+                finish();
             }
         }.start();
+
     }
 
     RFSearchListener rfSearchListener = new RFSearchListener.Stub() {
         @Override
         public void onCardPass(int cardType) throws RemoteException {
-            if (S50_CARD == cardType || S70_CARD == cardType) {
-                Log.e("TAG",  "M1 card @ " + cardType);
-                BaseApp.getApplication().getDeviceService().getBeeper().startBeep(200);
-                readRFData();
-            } else if (CPU_CARD == cardType) {
-                Log.e("TAG",  "CPU card");
+            iBeeper.startBeep(200);
+            switch (cardType){
+                case S50_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S50"); break;
+                case S70_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S70"); break;
+                case PRO_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type PRO"); break;
+                case S50_PRO_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S50 PRO"); break;
+                case S70_PRO_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S70 PRO"); break;
+                case CPU_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type CPU"); break;
             }
+
+//            if (S50_CARD == cardType || S70_CARD == cardType) {
+//
+//
+//
+//                iBeeper.startBeep(200);
+//                readRFData();
+//            }
+//            else if (CPU_CARD == cardType) {
+//                Log.e("PetrolExpert_BaseApp",  "CPU card");
+//            }
+//            else{
+//                Log.e("PetrolExpert_BaseApp", "onCardPass: " + cardType );
+//            }
         }
 
         @Override
         public void onFail(int error, String message) throws RemoteException {
-
-            Log.i("TAG", "Check card fail+ error code:" + error + "error message :" + message);
-
-            if(error == 167){
-                finish();
-            }
+            Log.i("PetrolExpert_BaseApp", "Check card fail+ error code:" + error + "error message :" + message);
         }
     };
 
@@ -208,9 +255,9 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             for (i = 0; i < 1; i++) {
                 int ret = irfCardReader.authBlock(i, 0, key);
                 if (ret < 0) {
-                    Log.d("TAG", "authBlock FAILS:" + ret);
+                    Log.d("PetrolExpert_BaseApp", "authBlock FAILS:" + ret);
                 } else {
-                    Log.d("TAG", "authBlock OK:" + ret);
+                    Log.d("PetrolExpert_BaseApp", "authBlock OK:" + ret);
                 }
 
                 ret = irfCardReader.readBlock(i, buffer);
@@ -223,14 +270,14 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                         sb.append(b);
                     }
                     Log.d("NFC", "Mifare Classic " + sb.toString());
-                    Log.d("TAG", "readData: success:" + toHexString(buffer) + " @ " + i);
+                    Log.d("PetrolExpert_BaseApp", "readData: success:" + toHexString(buffer) + i);
 
                     Message msg = new Message();
                     msg.getData().putString("msg", sb.toString());
                     handler.sendMessage(msg);
 
                 } else {
-                    Log.d("TAG", "readData: fail:" + ret + " @ " + i);
+                    Log.d("PetrolExpert_BaseApp", "readData: fail:" + ret + " @ " + i);
                 }
             }
         } catch (RemoteException e) {
@@ -389,14 +436,12 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
 
             if (nfcAdapter != null && nfcAdapter.isEnabled()) {
                 nfcAdapter.enableForegroundDispatch(this, pendingIntent, writeTagFilters, null);
-                startProgressBar();
+                startProgressBar(30000);
             }
         }
     }
 
     private void getCardInfoPEC (String cardId){
-
-
         Call<GetCardInfo> call = peServiceAPI.getCardInfoByBarcode(deviceId, getMD5HashCardCode(cardId));
 
         progressDialog.setMessage(getString(R.string.load_assortment_pg));
@@ -416,74 +461,97 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<GetCardInfo> call, Response<GetCardInfo> response) {
                 GetCardInfo getCardInfo = response.body();
-
                 if(getCardInfo != null){
                     if(getCardInfo.getErrorCode() == 0){
-                        if(getCardInfo.getAssortiment() != null && getCardInfo.getAssortiment().size() > 0){
-                            List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
-                            for (AssortmentCard item : getCardInfo.getAssortiment()){
-                                AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
-                                        item.getAssortimentID(),
-                                        item.getAssortmentCode(),
-                                        item.getDiscount(),
-                                        item.getName(),
-                                        item.getPrice(),
-                                        item.getPriceLineID(),
-                                        item.getAdditionalLimit(),
-                                        item.getCardBalance(),
-                                        item.getDailyLimit(),
-                                        item.getDailyLimitConsumed(),
-                                        item.getLimit(),
-                                        item.getMonthlyLimit(),
-                                        item.getMonthlyLimitConsumed(),
-                                        item.getWeeklyLimit(),
-                                        item.getWeeklyLimitConsumed()
-                                );
-                                assortmentSerializables.add(assortmentSerializable);
-                            }
 
-                            GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
-                                    getCardInfo.getAllowedBalance(),
-                                    assortmentSerializables,
-                                    getCardInfo.getBalance(),
-                                    getCardInfo.getBlockedAmount(),
-                                    getCardInfo.getCardEnabled(),
-                                    getCardInfo.getCardName(),
-                                    getCardInfo.getCardNumber(),
-                                    getCardInfo.getCustomerEnabled(),
-                                    getCardInfo.getCustomerId(),
-                                    getCardInfo.getCustomerName(),
-                                    getCardInfo.getDailyLimit(),
-                                    getCardInfo.getDailyLimitConsumed(),
-                                    getCardInfo.getLimitType(),
-                                    getCardInfo.getMonthlyLimit(),
-                                    getCardInfo.getMonthlyLimitConsumed(),
-                                    getCardInfo.getPhone(),
-                                    getCardInfo.getRefusedRefillClientAccount(),
-                                    getCardInfo.getTankCapacity(),
-                                    getCardInfo.getWeeklyLimit(),
-                                    getCardInfo.getWeeklyLimitConsumed()
-                            );
-
-                            Intent intent = new Intent(context, ClientMyDiscountCardCorporativActivity.class);
-                            intent.putExtra("ResponseClient", cardInfoSerializable);
-                            intent.putExtra("ClientCardCode", getMD5HashCardCode(cardId));
-                            startActivity(intent);
+                        EmployeesCard card = mRealm.where(EmployeesCard.class).equalTo("cardBarcode", getCardInfo.getCardBarcode()).findFirst();
+                        if(card != null){
+                            // Cardul dat este cardul de serviciu si arunc la pagina cu assortiment simplu si achitare diferita de cea de contul clientului
+//                            Intent intent = new Intent(context, ProductsWithoutIndentingActivity.class);
+//                            startActivity(intent);
+//                            progressDialog.dismiss();
+//                            finish();
+                            countDownTimerPg.cancel();
+                            progressBarScanCard.setProgress(0);
                             progressDialog.dismiss();
-                            finish();
+                            new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
+                                    .setTitle(getString(R.string.attention_dialog_title))
+                                    .setCancelable(false)
+                                    .setMessage("De pe acest card temporar nu pot fi efectuate vinzari!" + (card.getUserName().length() > 0 ? "El apartine " + card.getUserName() : "" + " Codul cardului: ") + card.getCardNumber())
+                                    .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
+                                        finish();
+                                    })
+                                    .show();
                         }
+                        else{
+                            if(getCardInfo.getAssortiment() != null && getCardInfo.getAssortiment().size() > 0){
+                                List<AssortmentCardSerializable> assortmentSerializables = new ArrayList<>();
+                                for (AssortmentCard item : getCardInfo.getAssortiment()){
+                                    AssortmentCardSerializable assortmentSerializable = new AssortmentCardSerializable(
+                                            item.getAssortimentID(),
+                                            item.getAssortmentCode(),
+                                            item.getDiscount(),
+                                            item.getPriceDiscounted() == 0 ? item.getPrice() : item.getPriceDiscounted(),
+                                            item.getName(),
+                                            item.getPrice(),
+                                            item.getPriceLineID(),
+                                            item.getAdditionalLimit(),
+                                            item.getCardBalance(),
+                                            item.getDailyLimit(),
+                                            item.getDailyLimitConsumed(),
+                                            item.getLimit(),
+                                            item.getMonthlyLimit(),
+                                            item.getMonthlyLimitConsumed(),
+                                            item.getWeeklyLimit(),
+                                            item.getWeeklyLimitConsumed(),
+                                            item.getVatPercent());
+                                    assortmentSerializables.add(assortmentSerializable);
+                                }
 
-                    }else{
+                                GetCardInfoSerializable cardInfoSerializable = new GetCardInfoSerializable(
+                                        getCardInfo.getAllowedBalance(),
+                                        assortmentSerializables,
+                                        getCardInfo.getBalance(),
+                                        getCardInfo.getBlockedAmount(),
+                                        getCardInfo.getCardEnabled(),
+                                        getCardInfo.getCardName(),
+                                        getCardInfo.getCardNumber(),
+                                        getCardInfo.getCustomerEnabled(),
+                                        getCardInfo.getCustomerId(),
+                                        getCardInfo.getCustomerName(),
+                                        getCardInfo.getDailyLimit(),
+                                        getCardInfo.getDailyLimitConsumed(),
+                                        getCardInfo.getLimitType(),
+                                        getCardInfo.getMonthlyLimit(),
+                                        getCardInfo.getMonthlyLimitConsumed(),
+                                        getCardInfo.getPhone(),
+                                        getCardInfo.getRefusedRefillClientAccount(),
+                                        getCardInfo.getTankCapacity(),
+                                        getCardInfo.getWeeklyLimit(),
+                                        getCardInfo.getWeeklyLimitConsumed()
+                                );
+
+                                Intent intent = new Intent(context, ClientMyDiscountCardCorporativActivity.class);
+                                intent.putExtra("ResponseClient", cardInfoSerializable);
+                                intent.putExtra("ClientCardCode", getMD5HashCardCode(cardId));
+                                intent.putExtra("ClientCardName", getCardInfo.getCardNumber() + "/" + getCardInfo.getCardName());
+                                startActivity(intent);
+                                progressDialog.dismiss();
+                                finish();
+                            }
+                        }
+                    }
+                    else{
                         progressDialog.dismiss();
                         new MaterialAlertDialogBuilder(context, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog)
                                 .setTitle(getString(R.string.attention_dialog_title))
-                                .setMessage(getString(R.string.error_check_code_msg) + getCardInfo.getErrorMessage() + getString(R.string.err_code) + getCardInfo.getErrorCode())
+                                .setMessage(getString(R.string.error_check_code_msg) + PECErrorMessage.getErrorMessage(getCardInfo.getErrorCode()))
                                 .setCancelable(false)
                                 .setPositiveButton(getString(R.string.ok_button), (dialogInterface, i) -> {
                                   finish();
                                 })
                                 .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
-                                    getCardInfoPEC(cardId);
+                                    getCardInfoPEC(getMD5HashCardCode(cardId));
                                 }))
                                 .show();
                     }
@@ -498,7 +566,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                                 finish();
                             })
                             .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
-                                getCardInfoPEC(cardId);
+                                getCardInfoPEC(getMD5HashCardCode(cardId));
                             }))
                             .show();
                 }
@@ -517,7 +585,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                             finish();
                         })
                         .setNegativeButton(getString(R.string.retry_button),((dialogInterface, i) -> {
-                            getCardInfoPEC(cardId);
+                            getCardInfoPEC(getMD5HashCardCode(cardId));
                         }))
                         .show();
             }
@@ -548,7 +616,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            Log.d("TAG", msg.getData().getString("msg"));
+            Log.d("PetrolExpert_BaseApp", msg.getData().getString("msg"));
             getCardInfoPEC(msg.getData().getString("msg"));
         }
     };

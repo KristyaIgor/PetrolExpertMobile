@@ -13,9 +13,15 @@ public class RegisterBillResponse {
     @SerializedName("BillUid")
     @Expose
     private String billUid;
-    @SerializedName("TaskId")
+    @SerializedName("ShiftNumber")
     @Expose
-    private Integer taskId;
+    private Integer shiftNumber;
+    @SerializedName("BillNumber")
+    @Expose
+    private Integer billNumber;
+    @SerializedName("ShiftId")
+    @Expose
+    private String shiftId;
 
     public Integer getErrorCode() {
         return errorCode;
@@ -41,11 +47,27 @@ public class RegisterBillResponse {
         this.billUid = billUid;
     }
 
-    public Integer getTaskId() {
-        return taskId;
+    public Integer getShiftNumber() {
+        return shiftNumber;
     }
 
-    public void setTaskId(Integer taskId) {
-        this.taskId = taskId;
+    public void setShiftNumber(Integer shiftNumber) {
+        this.shiftNumber = shiftNumber;
+    }
+
+    public Integer getBillNumber() {
+        return billNumber;
+    }
+
+    public void setBillNumber(Integer billNumber) {
+        this.billNumber = billNumber;
+    }
+
+    public String getShiftId() {
+        return shiftId;
+    }
+
+    public void setShiftId(String shiftId) {
+        this.shiftId = shiftId;
     }
 }

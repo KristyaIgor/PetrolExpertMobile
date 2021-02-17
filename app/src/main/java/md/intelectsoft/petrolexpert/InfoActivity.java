@@ -16,6 +16,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
+import android.net.TrafficStats;
 import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -34,16 +38,23 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.UnknownHostException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -60,6 +71,7 @@ import butterknife.OnClick;
 import io.realm.Realm;
 import io.realm.RealmResults;
 import md.intelectsoft.petrolexpert.Utils.LocaleHelper;
+import md.intelectsoft.petrolexpert.Utils.NetworkUtils;
 import md.intelectsoft.petrolexpert.Utils.SPFHelp;
 import md.intelectsoft.petrolexpert.network.broker.Body.InformationData;
 import md.intelectsoft.petrolexpert.network.broker.BrokerRetrofitClient;
@@ -129,7 +141,7 @@ public class InfoActivity extends AppCompatActivity {
                 @Override
                 public void onComplete(@NonNull Task<Boolean> task) {
                     if(task.isSuccessful()){
-                        Log.d("TAG", "remote config is fetched.");
+                        Log.d("PetrolExpert_BaseApp", "remote config is fetched.");
 
                         boolean isUpdate = remoteConfig.getBoolean("is_update");
                         updateUrl = remoteConfig.getString("update_url");
@@ -152,16 +164,17 @@ public class InfoActivity extends AppCompatActivity {
         JSONObject battery = getBatteryInformation(this);
         JSONObject memory = getMemoryInformation();
         JSONObject cpu = getCPUInformation();
-        JSONObject wifi = getWIFIInformation();
+        JSONObject wifi = getCurrentSsid(this);
 
         try {
 
             informationArray.put("Battery", battery);
             informationArray.put("Memory", memory);
             informationArray.put("CPU", cpu);
-            informationArray.put("WiFi", wifi);
+            informationArray.put("Network", wifi);
+            informationArray.put("Date", simpleDateFormat.format(new Date().getTime()));
 
-            Log.e("TAG", "onNavigationItemSelected JSON array: " + informationArray.toString());
+            Log.e("PetrolExpert_BaseApp", "onNavigationItemSelected JSON array: " + informationArray.toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -339,31 +352,141 @@ public class InfoActivity extends AppCompatActivity {
 
         return memory;
     }
+
+    @NotNull
+    private JSONObject getCurrentSsid (@NotNull Context context) {
+        JSONObject wifi = new JSONObject();
+
+        ConnectivityManager connManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if (networkInfo.isConnected()) {
+            final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+            final WifiInfo connectionInfo = wifiManager.getConnectionInfo();
+            if (connectionInfo != null && connectionInfo.getSSID().length() > 0) {
+                try {
+                    wifi.put("Connected", true);
+                    wifi.put("SSID", connectionInfo.getSSID());
+                    wifi.put("IP", intToInet4AddressHTL(connectionInfo.getIpAddress()));
+                    wifi.put("MAC", getMacAddressWiFi());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                try {
+                    wifi.put("Connected", false);
+                    wifi.put("SSID", "");
+                    wifi.put("IP", getIPAddress(true));
+                    wifi.put("MAC", getMacAddress());
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return wifi;
+    }
+
+    private String getMacAddressWiFi() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    res1.append(String.format("%02X:",b));
+                }
+
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+        }
+        return "02:00:00:00:00:00";
+    }
+
+    public static Inet4Address intToInet4AddressHTL(int hostAddress) {
+        return intToInet4AddressHTH(Integer.reverseBytes(hostAddress));
+    }
+
+    public static Inet4Address intToInet4AddressHTH(int hostAddress) {
+        byte[] addressBytes = { (byte) (0xff & (hostAddress >> 24)),
+                (byte) (0xff & (hostAddress >> 16)),
+                (byte) (0xff & (hostAddress >> 8)),
+                (byte) (0xff & hostAddress) };
+
+        try {
+            return (Inet4Address) InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            throw new AssertionError();
+        }
+    }
+
+    public static String getMacAddress() {
+        try {
+            List<NetworkInterface> all = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface nif : all) {
+                if (!nif.getName().equalsIgnoreCase("wlan0")) continue;
+
+                byte[] macBytes = nif.getHardwareAddress();
+                if (macBytes == null) {
+                    return "";
+                }
+                StringBuilder res1 = new StringBuilder();
+                for (byte b : macBytes) {
+                    // res1.append(Integer.toHexString(b & 0xFF) + ":");
+                    res1.append(String.format("%02X:",b));
+                }
+                if (res1.length() > 0) {
+                    res1.deleteCharAt(res1.length() - 1);
+                }
+                return res1.toString();
+            }
+        } catch (Exception ex) {
+            //handle exception
+        }
+        return "";
+    }
+
+    private String getIPAddress(boolean useIPv4) {
+        try {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                for (InetAddress addr : addrs) {
+                    if (!addr.isLoopbackAddress()) {
+                        String sAddr = addr.getHostAddress();
+                        //boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                        boolean isIPv4 = sAddr.indexOf(':')<0;
+
+                        if (useIPv4) {
+                            if (isIPv4)
+                                return sAddr;
+                        } else {
+                            if (!isIPv4) {
+                                int delim = sAddr.indexOf('%'); // drop ip6 zone suffix
+                                return delim<0 ? sAddr.toUpperCase() : sAddr.substring(0, delim).toUpperCase();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) { } // for now eat exceptions
+        return "";
+    }
+
     private JSONObject getCPUInformation(){
         JSONObject cpu = new JSONObject();
 
 
         return cpu;
-    }
-    private JSONObject getWIFIInformation(){
-        JSONObject wifi = new JSONObject();
-
-        WifiManager wifiManager = (WifiManager) context.getSystemService (Context.WIFI_SERVICE);
-        int state = wifiManager.getWifiState();
-
-        switch (state){
-            case WifiManager.WIFI_STATE_ENABLED :{
-
-            }
-        }
-
-        WifiInfo info = wifiManager.getConnectionInfo();
-
-        String ssid = info.getSSID();
-
-        Log.e("TAG", "getWIFIInformation: " + ssid );
-
-        return wifi;
     }
 
     public static double round(double value, int places) {
@@ -417,6 +540,7 @@ public class InfoActivity extends AppCompatActivity {
                             mRealm.executeTransaction(realm -> {
                                 realm.insert(fs);
                             });
+
                         }
                         else Toast.makeText(InfoActivity.this, "Error set as fiscal! Code: " + fiscalResult.getErrorCode() + " Message: " + fiscalResult.getErrorMessage(), Toast.LENGTH_SHORT).show();
                     } else Toast.makeText(InfoActivity.this, "Empty result!", Toast.LENGTH_SHORT).show();

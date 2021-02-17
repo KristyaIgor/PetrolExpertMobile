@@ -42,8 +42,7 @@ public class ProductsWithoutIndentingActivity extends AppCompatActivity {
 
         context = this;
 
-        Intent intent = getIntent();
-        products = (List<AssortmentSerializable>) intent.getSerializableExtra("ResponseAssortment");
+        products = BaseApp.getApplication().getListProducts();
 
         adapter = new AssortmentAdapter(context, R.layout.list_assortiment_view_without, products);
         listProducts.setAdapter(adapter);

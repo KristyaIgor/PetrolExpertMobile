@@ -10,6 +10,9 @@ public class CashList {
     @SerializedName("CashName")
     @Expose
     private String cashName;
+    @SerializedName("StationAddress")
+    @Expose
+    private String stationAddress;
     @SerializedName("StationName")
     @Expose
     private String stationName;
@@ -28,6 +31,14 @@ public class CashList {
 
     public void setCashName(String cashName) {
         this.cashName = cashName;
+    }
+
+    public String getStationAddress() {
+        return stationAddress;
+    }
+
+    public void setStationAddress(String stationAddress) {
+        this.stationAddress = stationAddress;
     }
 
     public String getStationName() {

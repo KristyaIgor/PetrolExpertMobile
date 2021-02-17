@@ -290,4 +290,5 @@
     <string name="suma_cecului_mare_ca_la_client">Valoarea cecului este mai mare decât suma disponibilă a clientului! Ați depășit cu:</string>
     <string name="limita_zi_intrecuta">\"Первышен дневной лимит! Вы превысели на: \"</string>
     <string name="mai_mult_toplivo_ca_la_client_disponibil">Ați introdus mai mult combustibil decât clientul are disponibil! Ați depășit cu:</string>
+    <string name="ops_failure_get_cash_list">"Ops! Failure get cash list: "</string>
 </resources>
