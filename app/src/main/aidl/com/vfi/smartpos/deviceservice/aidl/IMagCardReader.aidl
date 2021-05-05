@@ -3,53 +3,31 @@ package com.vfi.smartpos.deviceservice.aidl;
 import com.vfi.smartpos.deviceservice.aidl.MagCardListener;
 
 /**
- * \cn_
- * @brief 磁条卡刷卡器对象
- *
- * \_en_
- * @brief the object of magnetic card
- *
- * \en_e
- * \code{.java}
- * \endcode
- * @version
- * @see IInsertCardReader IRFCardReader
- * @author: baoxl
+ * the object of IMagCardReader
+ * @author Kai.L@verifone.cn, Chao.L@verifone.cn
  */
 interface IMagCardReader {
 	/**
-     * \cn_
-     * @brief 等待刷卡，获取磁卡卡片的磁道数据
-     *
-	 * @param timeout - 检卡超时时间(单位秒)
-	 * @param listener - 磁卡刷卡监听器
-     * \_en_
-     * @brief search card, non-block method
+     * search card, non-block method
      *
 	 * @param timeout timeout of the search, second
 	 * @param listener the callback listener whild card swiped
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-     *
+     * @since 1.x.x
+     * @see com.vfi.smartpos.deviceservice.aidl.MagCardListener
 	 */
 	void searchCard(int timeout, MagCardListener listener);
 	
 	/**
-     * \cn_
-     * @brief 取消等待刷卡
+     * stop search
      *
-     * \_en_
-     * @brief stop search
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-     *
+     * @since 1.x.x
 	 */
 	void stopSearch();
+
+    /**
+     * default is 7, enable track1 track2 and track3
+     * @param trkNum 1byte, bit0-track1, bit1-track2, bit2-track3
+     * @throws RemoteException
+     */
+	void enableTrack(int trkNum);
 }

@@ -39,9 +39,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.UUID;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -53,6 +56,13 @@ import md.intelectsoft.petrolexpert.Utils.SPFHelp;
 import md.intelectsoft.petrolexpert.bottomsheet.PaymentMethodSheetDialog;
 import md.intelectsoft.petrolexpert.enums.LimitCardEnum;
 import md.intelectsoft.petrolexpert.models.ToggleButton;
+import md.intelectsoft.petrolexpert.network.bill.BillServiceAPI;
+import md.intelectsoft.petrolexpert.network.bill.BillServiceRetrofitClient;
+import md.intelectsoft.petrolexpert.network.bill.body.BillItem;
+import md.intelectsoft.petrolexpert.network.bill.body.FiscalBill;
+import md.intelectsoft.petrolexpert.network.bill.body.RegisterFiscalBill;
+import md.intelectsoft.petrolexpert.network.bill.enums.BillServiceEnum;
+import md.intelectsoft.petrolexpert.network.bill.response.RespRegisterFiscalBill;
 import md.intelectsoft.petrolexpert.network.pe.PECErrorMessage;
 import md.intelectsoft.petrolexpert.network.pe.PERetrofitClient;
 import md.intelectsoft.petrolexpert.network.pe.PEServiceAPI;
@@ -90,6 +100,8 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
     double priceProduct = 0 , maxClientAvailable = 0;
     private boolean isAuth = false , isUserOperator = false;
     int limitType;
+
+    BillServiceAPI billServiceAPI;
     ProgressDialog progressDialog;
     PEServiceAPI peServiceAPI;
     Context context;
@@ -109,7 +121,6 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
     BillRegistered bill;
     Realm mRealm;
 
-    DecimalFormat decimalFormat = new DecimalFormat("##.###");
 
     @OnClick(R.id.imageCancelCount) void onCloseCount(){
         finish();
@@ -329,6 +340,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
 
     public void sendBillToBackAndSaveLocal(double sum, double discountedSum, double paymentSum, double quantity, int payCode, boolean validate) {
         bill = new BillRegistered();
+
         bill.setClientCardCode(cardId);
         bill.setOfficeCode(SPFHelp.getInstance().getString("deviceId",""));
         bill.setDate(new Date().getTime());
@@ -338,6 +350,8 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
         bill.setCashName(SPFHelp.getInstance().getString("Cash",""));
         bill.setStationName(SPFHelp.getInstance().getString("StationName", ""));
         bill.setValidate(validate);
+        bill.setExternId(UUID.randomUUID().toString());
+
 
         LineBill lineBill = new LineBill();
         PaymentBill paymentBill = new PaymentBill();
@@ -347,7 +361,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
         lineBill.setDiscountedPrice(productWithAuth.getPriceDiscount());
         lineBill.setName(productWithAuth.getName());
 
-        lineBill.setSum(sum);
+        lineBill.setSum(round(productWithAuth.getPrice() * quantity, 2));
         lineBill.setCount(quantity);
         lineBill.setDiscountedSum(discountedSum);
         lineBill.setVatPercent(productWithAuth.getVatPercent());
@@ -369,6 +383,8 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
             bill.setFiscal(true);
             Number indexFiscalMax = mRealm.where(BillRegistered.class).max("globalNumberFisc");
             bill.setGlobalNumberFisc(indexFiscalMax.intValue() + 1);
+
+
         }
         else {
             bill.setFiscal(false);
@@ -377,7 +393,79 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
                 indexFiscalMax = 0;
             bill.setGlobalNumberNeFisc(indexFiscalMax.intValue() + 1);
         }
+
+        if(!bill.isFiscal()){
+            FiscalBill fiscalBill = new FiscalBill();
+            fiscalBill.setDate(simpleDateFormat.format(bill.getDate()));
+            fiscalBill.setNumber(String.valueOf(bill.getGlobalNumberNeFisc()));
+            fiscalBill.setOperationType(BillServiceEnum.Sales);
+            fiscalBill.setOperatorCode(SPFHelp.getInstance().getString("UserCodeAuth","0"));
+            fiscalBill.setTotalArticle(1);
+            fiscalBill.setPaymantCode(payCode);
+            fiscalBill.setPaymantType("Contul clientului");
+            fiscalBill.setDiscount(round(sum - discountedSum,4));
+            fiscalBill.setID(bill.getExternId());
+            fiscalBill.setSumm(lineBill.getSum());
+            fiscalBill.setWorkplace(SPFHelp.getInstance().getString("StationName", ""));
+            fiscalBill.setUser(SPFHelp.getInstance().getString("Owner",""));
+            fiscalBill.setIDNO(SPFHelp.getInstance().getString("CompanyIDNO", ""));
+            fiscalBill.setAddress(SPFHelp.getInstance().getString("StationAddress","").replace("\\", "/"));
+            fiscalBill.setFiscalNumber(SPFHelp.getInstance().getString("FiscalCode",""));
+            fiscalBill.setClient(cardName);
+            fiscalBill.setFreeTextHeader("***");
+            fiscalBill.setFreeTextFooter("IntelectSoft S.R.L.");
+
+            List<BillItem> listBillItems = new ArrayList<>();
+
+            BillItem item = new BillItem();
+            item.setBasePrice(lineBill.getPrice());
+            item.setCPVCod("netu coda");
+            item.setDiscount(round(lineBill.getSum() - lineBill.getDiscountedSum(),2));
+            item.setFinalPrice(lineBill.getPrice() - lineBill.getDiscountedPrice() > 0 ? lineBill.getDiscountedPrice() : lineBill.getPrice());
+            item.setName(lineBill.getName());
+            item.setQuantity(lineBill.getCount());
+            item.setSumm(lineBill.getSum());
+            double vat = lineBill.getVatPercent();
+            if(vat == 20.00){
+                item.setVATCode("A");
+            }
+            else if(vat == 8.00) {
+                item.setVATCode("B");
+            }
+            else
+                item.setVATCode("C");
+
+            item.setVATTotal(round(lineBill.getDiscountedSum() - (lineBill.getDiscountedSum() / (1 + (lineBill.getVatPercent() / 100))), 2));
+            item.setVATValue(lineBill.getVatPercent());
+
+            listBillItems.add(item);
+
+            fiscalBill.setBillItems(listBillItems);
+
+            registerFiscalBill(fiscalBill);
+        }
+
         registerBillToBack(bill);
+    }
+
+    private void registerFiscalBill(FiscalBill fiscalBill) {
+        RegisterFiscalBill registerFiscalBill = new RegisterFiscalBill();
+        registerFiscalBill.setBill(fiscalBill);
+        registerFiscalBill.setLicenseID(SPFHelp.getInstance().getString("LicenseID", ""));
+
+        Call<RespRegisterFiscalBill> call = billServiceAPI.registerBill(registerFiscalBill);
+        call.enqueue(new Callback<RespRegisterFiscalBill>() {
+            @Override
+            public void onResponse(Call<RespRegisterFiscalBill> call, Response<RespRegisterFiscalBill> response) {
+                RespRegisterFiscalBill resp = response.body();
+                Log.e("TAG", "onResponse: " + response.toString());
+            }
+
+            @Override
+            public void onFailure(Call<RespRegisterFiscalBill> call, Throwable t) {
+                Log.e("TAG", "onFailure: " + t.getMessage());
+            }
+        });
     }
 
 
@@ -403,6 +491,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
 
         String uri = SPFHelp.getInstance().getString("URI", null);
         peServiceAPI = PERetrofitClient.getPEService(uri);
+        billServiceAPI = BillServiceRetrofitClient.getBillService();
 
         displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
@@ -489,7 +578,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
                     if(isLeftButtonSelected){
                         double sum = Double.parseDouble(countOrSum.getText().toString());
                         if(sum != 0){
-                            String countStr = String.valueOf(round(sum / priceProduct,4)).replace(",", ".");
+                            String countStr = String.format("%.2f", sum / priceProduct).replace(",", ".");
                             totalBill.setText(countStr.substring(0, countStr.indexOf(".") + 3) + " L");
                         }
                         else{
@@ -500,8 +589,8 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
                     else{
                         double countText = Double.parseDouble(countOrSum.getText().toString());
                         if(countText != 0){
-                            String countStr = String.valueOf(round(countText * priceProduct, 4)).replace(",", ".");
-                            totalBill.setText(countStr.substring(0, countStr.indexOf(".") + 3) + " MDL");
+                            String countStr = String.format("%.2f",countText * priceProduct).replace(",", ".");
+                            totalBill.setText(countStr.length() > 4 ? countStr.substring(0, countStr.indexOf(".") + 3) : countStr + " MDL");
                         }
                         else{
                             totalBill.setText("0.00 MDL");
@@ -551,7 +640,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
                     if(billResponse.getErrorCode() == 0){
 
                         bill.setShiftNumber(billResponse.getShiftNumber());
-                        bill.setExternId(billResponse.getBillUid());
+//                        bill.setExternId(billResponse.getBillUid());
                         bill.setShiftId(billResponse.getShiftId());
                         bill.setBackGlobalNumber(billResponse.getBillNumber());
 
@@ -760,7 +849,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
 
             int n2 = bill.getShiftNumber();
             String numberShiftToString = "";
-            int length1 = (int)(Math.log10(n2)+1);
+            int length1 = (int)(Math.log10(n2) + 1);
 
             if (length1 == 1)
                 numberShiftToString = "0000" + n2;
@@ -773,7 +862,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
             else
                 numberShiftToString = "" + n2;
 
-            printer.addTextInLine(fmtAddTextInLine, numberShiftToString , "", "01 #", 0);
+            printer.addTextInLine(fmtAddTextInLine, "#" + numberShiftToString , "", bill.getBackGlobalNumber() + " #", 0);
 
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.LEFT );
             printer.addText(format, "#-" + SPFHelp.getInstance().getString("Cash", "--"));
@@ -799,7 +888,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
             LineBill line = bill.getLines().get(0);
 
             String count = String.valueOf(line.getCount()).replace(",", ".");
-            printer.addTextInLine(fmtAddTextInLine, "" , "",   count.substring(0, count.indexOf(".") + 3) + " Litri X " + String.format("%.2f", line.getPrice()).replace(",", ".") + "  ", 0);
+            printer.addTextInLine(fmtAddTextInLine, "" , "",   (count.length() > 4 ? count.substring(0, count.indexOf(".") + 3) : count ) + " Litri X " + String.format("%.2f", line.getPrice()).replace(",", ".") + "  ", 0);
 //            String tvaCode = line.getVatPercent() == 20? " A" : line.getVatPercent() == 8? " B" : " C";
             printer.addTextInLine(fmtAddTextInLine, line.getName() , "",  String.format("%.2f", round(line.getCount() * line.getPrice(), 4)).replace(",", "."), 0);
             printer.addText(format, "--------------------------------");
@@ -809,7 +898,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24);
             if(line.getPrice() - line.getDiscountedPrice() > 0){
-                printer.addTextInLine(fmtAddTextInLine, "Reducere:" , "",  String.format("%.2f", round(line.getCount() * line.getPrice() - line.getSum(), 4)).replace(",", ".") + "  ", 0);
+                printer.addTextInLine(fmtAddTextInLine, "Reducere:" , "",  String.format("%.2f", round(line.getSum() - (line.getCount() * line.getDiscountedPrice()), 4)).replace(",", ".") + "", 0);
             }
 
             fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.NORMAL_24_24);
@@ -857,7 +946,7 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
 
             format.putInt(PrinterConfig.addText.FontSize.BundleName, PrinterConfig.addText.FontSize.HUGE_48);
             format.putInt(PrinterConfig.addText.Alignment.BundleName, PrinterConfig.addText.Alignment.CENTER);
-            if(key == null) {
+            if(key != null) {
                 printer.addText(format, "BON NEFISCAL!");
 
 
@@ -871,7 +960,8 @@ public class CountProductActivity extends AppCompatActivity  implements PaymentM
                 Bundle fmtAddQRCode = new Bundle();
                 fmtAddQRCode.putInt(PrinterConfig.addQrCode.Offset.BundleName, 128);
                 fmtAddQRCode.putInt(PrinterConfig.addQrCode.Height.BundleName, 128);
-                printer.addQrCode(fmtAddQRCode, "https://eservicii.md/clientportal/auth/fiscal/" + bill.getExternId());
+                printer.addQrCode(fmtAddQRCode, "https://eservicii.md/clientportal/auth/fiscal?bill=" + bill.getExternId() + "&device=" + SPFHelp.getInstance().getString("LicenseID","0"));
+                Log.e("TAG", "doPrintString: " + "https://eservicii.md/clientportal/auth/fiscal?bill=" + bill.getExternId() + "&device=" + SPFHelp.getInstance().getString("LicenseID","0") );
 
                 fmtAddTextInLine.putInt(PrinterConfig.addTextInLine.FontSize.BundleName, PrinterConfig.addTextInLine.FontSize.SMALL_16_16);
                 printer.addTextInLine(fmtAddTextInLine, "", "Scaneaza codul pentru vizualizarea\n bonului online!", "", 0);

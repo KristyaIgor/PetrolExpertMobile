@@ -14,18 +14,18 @@ import retrofit2.http.GET;
 import retrofit2.http.POST;
 
 public interface BrokerServiceAPI {
-    @GET("/ISConnectionBrokerService/json/Ping")
+    @GET("/ISLicenseService/json/Ping")
     Call<Boolean> ping();
 
-    @POST("/ISConnectionBrokerService/json/RegisterApplication")
+    @POST("/ISLicenseService/json/RegisterApplication")
     Call<RegisterApplication> registerApplication(@Body SendRegisterApplication bodyRegisterApp);
 
-    @POST("/ISConnectionBrokerService/json/GetURI")
+    @POST("/ISLicenseService/json/GetURI")
     Call<RegisterApplication> getURI(@Body SendGetURI sendGetURI);
 
-    @POST("/ISConnectionBrokerService/json/UpdateDiagnosticInformation")
+    @POST("/ISLicenseService/json/UpdateDiagnosticInformation")
     Call<ErrorMessage> updateDiagnosticInfo(@Body InformationData informationData);
 
-    @POST ("/ISConnectionBrokerService/json/SetAsFiscal")
+    @POST ("/ISLicenseService/json/SetAsFiscal")
     Call<SetFiscal> setAsFiscal (@Body SetFiscalBody licenseData);
 }

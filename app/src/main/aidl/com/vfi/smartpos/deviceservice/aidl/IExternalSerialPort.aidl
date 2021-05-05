@@ -3,72 +3,96 @@ package com.vfi.smartpos.deviceservice.aidl;
 
 import com.vfi.smartpos.deviceservice.aidl.SerialDataControl;
 
-    /**
-    * about the serial port on dock ( base )
-    */
+/**
+ * <p> about the serial port on dock ( base )
+ */
 interface IExternalSerialPort {
     /**
-     * 设置底座Pinpad口功能模式，分透传模式、外置pp1000v3密码键盘模式、外置pp1000v3非接模式, 默认为透传类型,此设置掉电不丢失.
-     * 由于底座Pinpad口只有一个，当选择其中一个功能模式后别的功能接口将不能使用,除非再次调用此接口进行切换.
-     * @param portMode 请参考ExternalSerialConst中底座pinpad口功能模式定义部分, 当传入非定义值时不设置模式但返回当前使用的模式
-     * @return 返回当前底座pinpad口功能模式
+     * <p> set the base Pinpad port function mode.
+     * <p> The mode includes
+     * <ul>
+     *  <li> {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.MODE_TRANSPARENT} </li>
+     *  <li> {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.MODE_PP1000V3_PINPAD} </li>
+     *  <li> {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.MODE_PP1000V3_CTLS} </li>
+     * </ul>
+     * <p> default mode is ExternalSerialConst.MODE_TRANSPARENT. This mode will not be lost after power off.
+     * <p> Note that: because base Pinpad port has only one, when you set one mode, other mode function interfaces will not be used. unless you reset the mode.
+     *
+     * @param portMode you can set ExternalSerialConst.MODE_TRANSPARENT, or ExternalSerialConst.MODE_PP1000V3_PINPAD, or ExternalSerialConst.MODE_PP1000V3_CTLS. other value will not be set but will return current pinpan port mode value.
+     * @return current pinpad port mode value.
+     * @since 1.x.x
      */
      int setExtPinpadPortMode(int portMode);
 
     /**
-     * 判断POS是否连接上底座, 如果连接上底座返回true，否则返回false.
+     * <p> check if pos connects pinpad successfully?
+     *
+     * @return {@code true} success. {@code false} fail.
+     * @since 1.x.x
      */
     boolean isExternalConnected();
 
     /**
-     * 打开地址串口，并设置串口数据控制属性（波特率、数据位、停止位、校验位),如果已经打开过直接返回true
-     *  @param portNum : 0 - PinPad口(带5v电源)  1 - RS232(标准串口),最好以ExternalSerialConst中的端口常量编码,不要直接传0或者1
-     *  @param dataControl : 设置串口数据控制属性，即波特率等，具体参考ExtternalSerialConst
-     *  @return 返回打开设备是否成功,如果打开失败就读写数据，读写返回值为0
+     * <p> open serial port and set serial port config (including baud rate, data bit, stop bit, parity bit). if the serial port has opend, return true directly.
+     *
+     * @param portNum : {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_PINPAD} or {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_RS232}.
+     * @param dataControl : set serial port config. please see {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst}.
+     * @return {@code true} success. {@code false} fail.
+     * @since 1.x.x
      */
     boolean openSerialPort(int portNum, in SerialDataControl dataControl);
 
     /**
-     * 非阻塞写串口数据，返回成功传送的数据长度。
-     *  @param portNum : 0 - PinPad口(带5v电源)  1 - RS232(标准串口),最好以ExternalSerialConst中的端口常量编码,不要直接传0或者1
-     *  @param writeData : 要传输的数据缓存
-     *  @param dataLength : 要传输的数据长度
-     *  @return 返回实际发生出去的数据长度;返回0表示没有发出去任何数据;负数参考ExternalSerialconst错误常量说明.
+     * <p> non-blocking write serial port data.
+     *
+     * @param portNum : {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_PINPAD} or {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_RS232}.
+     * @param writeData : transport writing data buffer
+     * @param dataLength : transport writing data length
+     * @return the length of the data actually sent. if return 0, means no data was sent. if return negative number, please see {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst}.
+     * @since 1.x.x
      */
     int writeSerialPort(int portNum, in byte[] writeData, int dataLength);
 
     /**
-     * 非阻塞读串口数据，返回成功读取数据长度。
-     *  @param portNum : 0 - PinPad口(带5v电源)  1 - RS232(标准串口)
-     *  @param readData : 存要读取数据的缓冲区
-     *  @param dataLength : 想要读取数据长度 (不能超过缓冲区大小)
-     *  @return 返回实际读到的数据长度;返回0表示没有收到任何数据;负数参考ExternalSerialconst错误常量说明.
+     * <p> non-blocking read serial port data.
+     *
+     * @param portNum : {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_PINPAD} or {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_RS232}.
+     * @param readData : transport reading data buffer
+     * @param dataLength : transport reading data length (the length can not be larger than the buffer size)
+     * @return the length of the data actually readed; if return 0, means no data was readed. if return negative number, please see {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst}.
+     * @since 1.x.x
      */
     int readSerialPort(int portNum, out byte[] readData, int dataLength);
 
     /**
-     * 阻塞写串口数据直到超时，返回成功传送的数据长度。
-     *  @param portNum : 0 - PinPad口(带5v电源)  1 - RS232(标准串口),最好以ExternalSerialConst中的端口常量编码,不要直接传0或者1
-     *  @param writeData : 要传输的数据缓存
-     *  @param dataLength : 要传输的数据长度
-     *  @param timeoutMs : 超时时间(单位毫秒)
-     *  @return 返回实际发生出去的数据长度.返回0表示超时没有发出任何数据;负数参考ExternalSerialconst错误常量说明.
+     * <p> block writing serial port data until timeout.
+     *
+     * @param portNum : {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_PINPAD} or {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_RS232}.
+     * @param writeData : transport writing data buffer
+     * @param dataLength : transport writing data length
+     * @param timeoutMs : overtime time(unit is milliseconds)
+     * @return the length of the data actually sent. if return 0, means no data was sent. if return negative number, please see {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst}.
+     * @since 1.x.x
      */
     int safeWriteSerialPort(int portNum, in byte[] writeData, int Length, long timeoutMs);
 
     /**
-     * 阻塞读串口数据直到超时，返回成功读取数据长度。
-     *  @param portNum : 0 - PinPad口(带5v电源)  1 - RS232(标准串口),最好以ExternalSerialConst中的端口常量编码,不要直接传0或者1
-     *  @param readData : 存要读取数据的缓冲区
-     *  @param dataLength : 想要读取数据长度 (不能超过缓冲区大小)
-     *  @param timeoutMs : 超时时间(单位毫秒)
-     *  @return 返回实际读到的数据长度;返回0表示超时没有收到任何数据;负数参考ExternalSerialconst错误常量说明.
+     * <p> block reading serial port data until timeout.
+     *
+     * @param portNum : {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_PINPAD} or {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_RS232}.
+     * @param readData : transport reading data buffer
+     * @param dataLength : transport reading data length (the length can not be larger than the buffer size)
+     * @param timeoutMs : overtime time(unit is milliseconds)
+     * @return the length of the data actually readed; if return 0, means no data was readed. if return negative number, please see {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst}.
+     * @since 1.x.x
      */
     int safeReadSerialPort(int portNum, out byte[] readData, int Length, long timeoutMs);
 
     /**
-     * 关闭串口
-     *  @param portNum : 0 - PinPad口(带5v电源)  1 - RS232(标准串口),最好以ExternalSerialConst中的端口常量编码,不要直接传0或者1
+     * <p> close serial port.
+     *
+     * @param portNum : {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_PINPAD} or {@link com.vfi.smartpos.deviceservice.aidl.ExternalSerialConst.PORT_RS232}.
+     * @since 1.x.x
      */
     void closeSerialPort(int portNum);
 }

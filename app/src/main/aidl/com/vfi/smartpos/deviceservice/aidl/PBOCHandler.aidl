@@ -153,13 +153,13 @@ interface PBOCHandler {
      *   |----AARESULT_ARQC(2) - 行为分析结果ARQC | AARESULT ARQC, the action analysis result
      *   |----PAYPASS_MAG_ARQC(302)-paypass的磁卡模式联机请求 | the mode of magnetic card on paypass request
      *   |----PAYPASS_EMV_ARQC(303)- paypass的EMV模式联机请求 | the mode of EMV on paypass request
-     * <li>ARQC_DATA(String) - 联机请求卡片部分55域数据 | request  some of Field55 plain, or you can use getAppTLVList() to get by yourself</li>
-     *   |----(CTLS plain include "9F26,9F27,9F10,9F37,9F1A,9F36,95,9A,9C,9F02,5F2A,82,9F03,9F33,9F34,9F35,84,9F1E,9F09,9F41")
-     *   |----(IC plain include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")
-     * <li>REVERSAL_DATA(String) - IC卡冲正部分TLV数据 | some of reversal plain of IC card, or you can use getAppTLVList() to get by yourself</li>
-     *   |----(IC plain include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")
+     * <li>ARQC_DATA(String) - 联机请求卡片部分55域数据 | request  some of Field55 data, or you can use getAppTLVList() to get by yourself</li>
+     *   |----(CTLS data include "9F26,9F27,9F10,9F37,9F1A,9F36,95,9A,9C,9F02,5F2A,82,9F03,9F33,9F34,9F35,84,9F1E,9F09,9F41")
+     *   |----(IC data include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")
+     * <li>REVERSAL_DATA(String) - IC卡冲正部分TLV数据 | some of reversal data of IC card, or you can use getAppTLVList() to get by yourself</li>
+     *   |----(IC data include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")
      * </ul>
-     * You can get form ARQC plain:
+     * You can get form ARQC data:
      * <ul>
      * <li>CARD_ORG(String)-卡组织类别 | the card organization</li>
      * <li>PAN(String)-交易卡号 | the PAN</li>
@@ -180,13 +180,13 @@ interface PBOCHandler {
      *   |----AARESULT_ARQC(2) - AARESULT ARQC, the action analysis result<br>
      *   |----PAYPASS_MAG_ARQC(302)-the mode of magnetic card on paypass request<br>
      *   |----PAYPASS_EMV_ARQC(303)- the mode of EMV on paypass request<br>
-     * <li>ARQC_DATA(String) - request some of Field55 plain, or you can use getAppTLVList() to get by yourself</li>
-     *   |----(CTLS plain include "9F26,9F27,9F10,9F37,9F1A,9F36,95,9A,9C,9F02,5F2A,82,9F03,9F33,9F34,9F35,84,9F1E,9F09,9F41")<br>
-     *   |----(IC plain include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")<br>
-     * <li>REVERSAL_DATA(String) - some of reversal plain of IC card, or you can use getAppTLVList() to get by yourself</li>
-     *   |----(IC plain include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")<br>
+     * <li>ARQC_DATA(String) - request some of Field55 data, or you can use getAppTLVList() to get by yourself</li>
+     *   |----(CTLS data include "9F26,9F27,9F10,9F37,9F1A,9F36,95,9A,9C,9F02,5F2A,82,9F03,9F33,9F34,9F35,84,9F1E,9F09,9F41")<br>
+     *   |----(IC data include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")<br>
+     * <li>REVERSAL_DATA(String) - some of reversal data of IC card, or you can use getAppTLVList() to get by yourself</li>
+     *   |----(IC data include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41")<br>
      * </ul>
-     * You can get form ARQC plain:
+     * You can get form ARQC data:
      * <ul>
      * <li>CARD_ORG(String)-the card organization</li>
      * <li>PAN(String)-the PAN</li>
@@ -291,11 +291,11 @@ public void onRequestOnlineProcess(Bundle aaResult) throws RemoteException {
      * <li>QPBOC_KERNAL_INIT_FAILED(301) - 非接内核初始化失败 | CTLS kernel init failed</li>
      * </ul>
      *
-     * @param plain 交易结果数据 | parameter plain
+     * @param data 交易结果数据 | parameter data
      * <ul>
      * <li>TC_DATA(String) - IC卡交易批准卡片返回数据 | the string of TC, you can use getAppTLVList() to get by yourself</li>
-     *     |-----(TC plain include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41,9F63,91")
-     * <li>REVERSAL_DATA(String) - IC卡冲正数据 | the string of reversal plain</li>
+     *     |-----(TC data include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41,9F63,91")
+     * <li>REVERSAL_DATA(String) - IC卡冲正数据 | the string of reversal data</li>
      * <li>ERROR(String) - 错误描述(PBOC流程错误返回) | the error description ( from the result of PBOC) </li>
      * </ul>
      * \_en_
@@ -336,22 +336,22 @@ public void onRequestOnlineProcess(Bundle aaResult) throws RemoteException {
      * <li>EMV_SEE_PHONE(150)-paypass result, please check the result on phone</li>
      * </ul>
      *
-     * @param plain plain of result
+     * @param data data of result
      * <ul>
      * <li>TC_DATA(String) - the string of TC, you can use getAppTLVList() to get by yourself</li>
-     *     |-----(TC plain include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41,9F63,91")
-     * <li>REVERSAL_DATA(String) - the string of reversal plain</li>
+     *     |-----(TC data include "9F26,9F27,9F10,9F37,9F36,95,9A,9C,9F02,5F2A,82,9F1A,9F03,9F33,9F34,9F35,9F1E,84,9F09,9F41,9F63,91")
+     * <li>REVERSAL_DATA(String) - the string of reversal data</li>
      * <li>ERROR(String) - the error description ( from the result of PBOC) </li>
      * </ul>
      * \en_e
      *
      * \code{.java}
     @Override
-    public void onTransactionResult(int result, Bundle plain) throws RemoteException {
+    public void onTransactionResult(int result, Bundle data) throws RemoteException {
         Log.i(TAG, "onTransactionResult callback, result:" + result +
-                "\nTC_DATA:" + plain.getString(BUNDLE_TC_DATA) +
-                "\nREVERSAL_DATA:" + plain.getString(BUNDLE_REVERSAL_DATA) +
-                "\nERROR:" + plain.getString(BUNDLE_TRANS_ERROR));
+                "\nTC_DATA:" + data.getString(BUNDLE_TC_DATA) +
+                "\nREVERSAL_DATA:" + data.getString(BUNDLE_REVERSAL_DATA) +
+                "\nERROR:" + data.getString(BUNDLE_TRANS_ERROR));
         if ((type == 3) && (transType == EC_BALANCE || transType == Q_QUERY)) {
             String ecBalance = ipboc.getPBOCData("BALANCE");
             Log.i(TAG, "BALANCE:" + ecBalance);
@@ -361,7 +361,7 @@ public void onRequestOnlineProcess(Bundle aaResult) throws RemoteException {
             logUtils.addCaseLog(msg);
 
         }
-        msg = "result:" + result + "\n" + plain.getString(BUNDLE_TRANS_ERROR);
+        msg = "result:" + result + "\n" + data.getString(BUNDLE_TRANS_ERROR);
         Message message1 = new Message();
         message1.getData().putString("message", msg);
         handler.sendMessage(message1);

@@ -70,6 +70,19 @@ public class DKVPaymentActivity extends AppCompatActivity {
         finish();
     }
 
+    @OnClick(R.id.buttonConfirmDKVPayment) void onCLick(){
+        try {
+            boolean isSmart = iSmartCardReader.isCardIn();
+            Log.e(TAG, "onCLick smart card: " + isSmart);
+            if(isSmart){
+                Log.e(TAG, "onCLick smart card: " + isSmart);
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,12 +91,11 @@ public class DKVPaymentActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         ButterKnife.setDebug(true);
 
-
         //without identify
         productWithoutAuth = (AssortmentSerializable) getIntent().getSerializableExtra("Product");
         textProductName.setText(productWithoutAuth.getName());
         textProductSum.setText(getIntent().getDoubleExtra("Sum", 0) + " MDL");
-        buttonConfirmCard.setEnabled(false);
+//        buttonConfirmCard.setEnabled(false);
 
         if(BaseApp.isVFServiceConnected()){
             //Initialize elements
@@ -95,7 +107,6 @@ public class DKVPaymentActivity extends AppCompatActivity {
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
-
 
             //try read cards
             try {
@@ -121,7 +132,6 @@ public class DKVPaymentActivity extends AppCompatActivity {
         }
     }
 
-
     RFSearchListener rfSearchListener = new RFSearchListener.Stub() {
         @Override
         public void onCardPass(int cardType) throws RemoteException {
@@ -131,7 +141,7 @@ public class DKVPaymentActivity extends AppCompatActivity {
             }
             else if (CPU_CARD == cardType) {
                 idevice.getBeeper().startBeep(150);
-
+                Log.e("PetrolExpert_BaseApp",  "CPU Card " + cardType);
                 doCTLSCard();
             }
         }

@@ -7,7 +7,7 @@ package com.vfi.smartpos.deviceservice.aidl;
 interface UPCardListener {
 	/**
 	 * 读卡成功回调 | on success
-	 * @param plain - 芯片卡卡数据 | the date
+	 * @param data - 芯片卡卡数据 | the date
 	 * <ul>
      * <li>PAN(String) - 主账号（卡号）| PAN</li>
      * <li>TRACK2(String) - 磁道2数据 | track 2</li>

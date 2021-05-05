@@ -3,68 +3,68 @@ package com.vfi.smartpos.deviceservice.aidl;
 import com.vfi.smartpos.deviceservice.aidl.ScannerListener;
 
 /**
- * \cn_
- * @brief 扫码器对象
+ * <p>the object of scanner for scanning the bar-code or QR-code
  *
- * 实现设备对二维码扫码功能。
- * \_en_
- * @brief the object of scanner
- *
- * for scanning the bar-code or QR-code
- * \en_e
- * \code{.java}
- * \endcode
- * @version
- * @see
- *
- * @author: baoxl
+ * @author: kai.l@verifone.cn
  */
 interface IScanner {
 	/**
-     * \cn_
-     * @brief 启动扫码
-     *
-	 * @param配置参数 | the parameter
-     *  topTitleString(String)：扫描框最上方提示信息，中间对齐，| the title string on the top, align center.
-     *  upPromptString(String)：扫描框上方提示信息，中间对齐， | the prompt string upside of the scan box, align center.
-     *  downPromptString(String)：扫描框下方提示信息，中间对齐 | the prompt string downside of the scan box , align center.
-	 *  timeout - 超时时间，单位ms | the timeout, millsecond.
-	 *  listener - 扫码结果监听 | the call back listerner
-	 *  showScannerBorder(boolean, true is default): 是否显示扫码框 | set false, scanner border & upPromptString &downPromptString will be hided,
-     * \_en_
-     * @brief start scan
+     * <p>start scan
      *
 	 * @param param
      *  <BR>topTitleString(String) the title string on the top, align center.
      *  <BR>upPromptString(String) the prompt string upside of the scan box, align center.
      *  <BR>downPromptString(String) the prompt string downside of the scan box , align center.
 	 *  <BR>showScannerBorder(boolean, true is default) false for: scanner border & upPromptString &downPromptString will be hided,
+	 *  <BR>scannerSelect(int) 0 for front, 1 for rear(if not set this paramater, use IDeviceService.getScanner() to set front/rear position)
+	 *  <BR>decodeLibName(String) call honeywell scan and config honeywell scan.
+	 *      <ul>
+	 *      <li>if decodeLibName starts wtith "honeywell;", follows with the string value of Symbology class properties.</li>
+	 *      <li>if decodeLibName has multiple properties, split ";" between the properties.</li>
+	 *      for example, "honeywell;436297729;436289537". "436297729" refers to the Symbology.CODE39, "436289537" refers to the Symbology.CODE128.
+	 *      CODE39:436297729, CODE128:436289537, QR:436379649, OCR:436391937, Interleaved 2 of 5:436310017, etc.
+	 *      <li>if you want to set honeywell passport properties, you need to send "honeywell;436391937;453169155" configuration parameter.</li>
+	 *      </ul>
+	 *      <BR><b>Note that: the honeywell scanner is not free of charge, please contact local Verifone business staff for details</b>
 	 * @param timeout  the timeout, millsecond.
-	 * @param  listener  the call back listerner
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-     *
+	 * @param  listener {@link ScannerListener}the call back listerner
+	 * @since 1.x.x
 	 *
 	 */
 	void startScan(in Bundle param, long timeout, ScannerListener listener);
 	
 	/**
-     * \cn_
-     * @brief 停止扫码
+     * <p>stop scan
      *
-     * \_en_
-     * @brief stop scan
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-     *
-	 *
+	 * @since 1.x.x
 	 */
 	void stopScan();
+
+    /**
+     * <p>Custom UI by customers
+     * @param param
+            <Br>customUI(boolean) default value is false
+     *      <Br>x1(int) vertex coordinates x1, default is 0
+     *      <Br>y1(int) vertex coordinates y1, default is 0
+     *      <Br>width(int) if customUI is true, default is full screen
+     *      <Br>height(int) if customUI is true, default is full screen
+     * @throws RemoteException
+     * @since after 2.21.0
+     */
+	void scannerInit(in Bundle param);
+
+    /**
+     * <p>open/close flash
+     * @param enable open/close flash
+     * @throws RemoteException
+     * @since after 2.21.0
+     */
+	void openFlashLight(boolean enable);
+
+    /**
+     * <p>switch scanner front/rear camera
+     * @throws RemoteException
+     * @since after 2.21.0
+     */
+	void switchScanner();
 }

@@ -19,7 +19,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
 import android.provider.Settings;
@@ -33,11 +32,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.vfi.smartpos.deviceservice.aidl.IBeeper;
+import com.vfi.smartpos.deviceservice.aidl.IDeviceService;
 import com.vfi.smartpos.deviceservice.aidl.IRFCardReader;
 import com.vfi.smartpos.deviceservice.aidl.RFSearchListener;
+import com.vfi.smartpos.deviceservice.aidl.card_reader.IUltraLightCard;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -59,12 +59,9 @@ import md.intelectsoft.petrolexpert.network.pe.result.AssortmentCardSerializable
 import md.intelectsoft.petrolexpert.network.pe.result.GetCardInfo;
 import md.intelectsoft.petrolexpert.network.pe.result.GetCardInfoSerializable;
 import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.EmployeesCard;
-import md.intelectsoft.petrolexpert.verifone.Utilities.DeviceHelper;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static md.intelectsoft.petrolexpert.ClientMyDiscountCardCorporativActivity.round;
 
 @SuppressLint("NonConstantResourceId")
 public class ScanCardCorporativActivity extends AppCompatActivity {
@@ -80,8 +77,10 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     PendingIntent pendingIntent;
     IntentFilter writeTagFilters[];
 
+    IDeviceService iDeviceService;
     IRFCardReader irfCardReader;
     IBeeper iBeeper;
+    IUltraLightCard iUltraLightCard;
 
     Realm mRealm;
     CountDownTimer countDownTimerPg = null;
@@ -92,6 +91,32 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
     public final static int S50_PRO_CARD = 0x03;
     public final static int S70_PRO_CARD = 0x04;
     public final static int CPU_CARD = 0x05;
+    public final static int CPU_CARD_B = 0x06;
+    public final static int Mifare_UltraLight = 0x07;
+    public final static int Mifare_Desfire = 0x08;
+    public final static int NTAG = 0x09;
+    public final static int ICode = 0x0A;
+    public final static int UltraLight = 0x0B;
+
+    /**
+     * on card pass
+     *
+     * <ul><BR>
+     * <li>S50_CARD(0x00) S50, mifare card</li><BR>
+     * <li>S70_CARD(0x01) - S70, mifare card</li><BR>
+     * <li>PRO_CARD(0x02) - PRO card</li><BR>
+     * <li>S50_PRO_CARD(0x03) - S50 PRO card</li><BR>
+     * <li>S70_PRO_CARD(0x04) - S70 PRO card </li><BR>
+     * <li>CPU_CARD_A(0x05) - CPU A card(contactless card)</li><BR>
+     * <li>CPU_CARD_B(0x06) - CPU B card(contactless card)</li><BR>
+     * <li>Mifare_UltraLight(0x07) - Mifare UltraLight card(M0)</li><BR>
+     * <li>Mifare_Desfire(0x08) - Mifare Desfire card(M3)</li><BR>
+     * <li>NTAG_CARD(0x09) - NTAG card(M3)</li><BR>
+     * <li>ICode_CARD(0x0A) - ICode card(M3)</li><BR>
+     * <li>UltraLight_CARD(0x0B) - UltraLight card(M3)</li><BR>
+     * </ul>
+     * @since 1.x.x
+     */
 
     @OnClick(R.id.imageScanCameraCardCorp) void onScanCamera(){
         Intent scanIntent = new Intent(context, ScanMyDiscountActivity.class);
@@ -121,42 +146,61 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
         peServiceAPI = PERetrofitClient.getPEService(uri);
 
         mRealm = Realm.getDefaultInstance();
+        iDeviceService = BaseApp.getApplication().getDeviceService();
 
         isVerifone = BaseApp.isVFServiceConnected();
+
         if(isVerifone){
             try {
-
-//                irfCardReader = BaseApp.getApplication().getDeviceService().getRFCardReader();
-                irfCardReader = BaseApp.getIrfCardReader();
-                iBeeper = BaseApp.getApplication().getDeviceService().getBeeper();
+                irfCardReader = iDeviceService.getRFCardReader();
+                iBeeper = iDeviceService.getBeeper();
+                iUltraLightCard = iDeviceService.getUtrlLightManager();
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
             startProgressBar(30000);
+
             try {
                 irfCardReader.searchCard(new RFSearchListener.Stub() {
                     @Override
                     public void onCardPass(int cardType) throws RemoteException {
                         iBeeper.startBeep(200);
                         switch (cardType){
-                            case S50_CARD : Log.i("Petrol_TAG", "onCardPass type S50"); break;
-                            case S70_CARD : Log.i("Petrol_TAG", "onCardPass type S70"); break;
+                            case S50_CARD : {
+                                Log.i("Petrol_TAG", "onCardPass type S50");
+                                readRFData(false); break;
+                            }
+                            case S70_CARD : {
+                                Log.i("Petrol_TAG", "onCardPass type S70");
+                                readRFData(false);
+                            } break;
                             case PRO_CARD : Log.i("Petrol_TAG", "onCardPass type PRO"); break;
                             case S50_PRO_CARD : Log.i("Petrol_TAG", "onCardPass type S50 PRO"); break;
                             case S70_PRO_CARD : Log.i("Petrol_TAG", "onCardPass type S70 PRO"); break;
                             case CPU_CARD : Log.i("Petrol_TAG", "onCardPass type CPU"); break;
+                            case CPU_CARD_B : Log.i("Petrol_TAG", "onCardPass type CPU_CARD_B"); break;
+                            case Mifare_UltraLight : {
+                                Log.i("Petrol_TAG", "onCardPass type Mifare_UltraLight");
+                                iUltraLightCard = iDeviceService.getUtrlLightManager();
+                                readRFData(true);
+
+//                                int selector = iUltraLightCard.sectorSelect((byte) 0x00);
+//                                int init = iUltraLightCard.init();
+//                                String version = iUltraLightCard.getVersion();
+//                                byte[] read = iUltraLightCard.read((byte) 0x00);
+//                                int test =1;
+                            }break;
+                            case Mifare_Desfire : Log.i("Petrol_TAG", "onCardPass type Mifare_Desfire"); break;
+                            case NTAG : Log.i("Petrol_TAG", "onCardPass type NTAG"); break;
+                            case ICode : Log.i("Petrol_TAG", "onCardPass type ICode"); break;
+                            case UltraLight : Log.i("Petrol_TAG", "onCardPass type UltraLight"); break;
                         }
+                        Log.e("Petrol_TAG", "onCardPass: otherType= " + cardType);
                     }
 
                     @Override
                     public void onFail(int error, String message) throws RemoteException {
-                        Log.i("Petrol_TAG", "Check card fail + error code: " + error + " error message: " + message);
-                    }
-
-                    @Override
-                    public IBinder asBinder() {
-                        Log.i("Petrol_TAG", "asBinder retunerd!");
-                        return super.asBinder();
+                        Log.e("Petrol_TAG", "onFail, Message: " + message );
                     }
                 }, 30);
 
@@ -209,41 +253,7 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
 
     }
 
-    RFSearchListener rfSearchListener = new RFSearchListener.Stub() {
-        @Override
-        public void onCardPass(int cardType) throws RemoteException {
-            iBeeper.startBeep(200);
-            switch (cardType){
-                case S50_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S50"); break;
-                case S70_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S70"); break;
-                case PRO_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type PRO"); break;
-                case S50_PRO_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S50 PRO"); break;
-                case S70_PRO_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type S70 PRO"); break;
-                case CPU_CARD : Log.e("PetrolExpert_BaseApp", "onCardPass: type CPU"); break;
-            }
-
-//            if (S50_CARD == cardType || S70_CARD == cardType) {
-//
-//
-//
-//                iBeeper.startBeep(200);
-//                readRFData();
-//            }
-//            else if (CPU_CARD == cardType) {
-//                Log.e("PetrolExpert_BaseApp",  "CPU card");
-//            }
-//            else{
-//                Log.e("PetrolExpert_BaseApp", "onCardPass: " + cardType );
-//            }
-        }
-
-        @Override
-        public void onFail(int error, String message) throws RemoteException {
-            Log.i("PetrolExpert_BaseApp", "Check card fail+ error code:" + error + "error message :" + message);
-        }
-    };
-
-    public void readRFData() {
+    public void readRFData(boolean bool) {
         byte[] buffer = new byte[16];
         int i = 0;
 
@@ -260,24 +270,37 @@ public class ScanCardCorporativActivity extends AppCompatActivity {
                     Log.d("PetrolExpert_BaseApp", "authBlock OK:" + ret);
                 }
 
-                ret = irfCardReader.readBlock(i, buffer);
-                if (0 == ret) {
+                if(bool){
+                   byte[] rets = iUltraLightCard.read((byte) 0x255);
                     StringBuilder sb = new StringBuilder();
-                    for (byte page : buffer) {
+                    for (byte page : rets) {
                         int b = page & 0xff;
                         if (b < 0x10)
                             sb.append("");
                         sb.append(b);
                     }
-                    Log.d("NFC", "Mifare Classic " + sb.toString());
-                    Log.d("PetrolExpert_BaseApp", "readData: success:" + toHexString(buffer) + i);
+                    Log.d("NFC", "Mifare Ultralight " + sb.toString());
+                }
+                else{
+                    ret = irfCardReader.readBlock(i, buffer);
+                    if (0 == ret) {
+                        StringBuilder sb = new StringBuilder();
+                        for (byte page : buffer) {
+                            int b = page & 0xff;
+                            if (b < 0x10)
+                                sb.append("");
+                            sb.append(b);
+                        }
+                        Log.d("NFC", "Mifare Classic " + sb.toString());
+                        Log.d("PetrolExpert_BaseApp", "readData: success:" + toHexString(buffer) + i);
 
-                    Message msg = new Message();
-                    msg.getData().putString("msg", sb.toString());
-                    handler.sendMessage(msg);
+                        Message msg = new Message();
+                        msg.getData().putString("msg", sb.toString());
+                        handler.sendMessage(msg);
 
-                } else {
-                    Log.d("PetrolExpert_BaseApp", "readData: fail:" + ret + " @ " + i);
+                    } else {
+                        Log.d("PetrolExpert_BaseApp", "readData: fail:" + ret + " @ " + i);
+                    }
                 }
             }
         } catch (RemoteException e) {

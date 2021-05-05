@@ -95,9 +95,9 @@ dependencies {
     implementation 'com.google.firebase:firebase-crashlytics:17.3.1'
 
     //Firebase RemoteConfig
-    implementation 'com.google.firebase:firebase-config:20.0.3'
+    implementation 'com.google.firebase:firebase-config:20.0.4'
 
     //Firebase Performance
-    implementation 'com.google.firebase:firebase-perf:19.1.0'
+    implementation 'com.google.firebase:firebase-perf:19.1.1'
 
 }

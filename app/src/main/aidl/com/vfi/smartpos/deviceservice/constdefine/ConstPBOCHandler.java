@@ -57,7 +57,7 @@ public class ConstPBOCHandler {
         public class data {
             public static final String KEY_TC_DATA_String = "TC_DATA";
 
-            public static final String KEY_REVERSAL_DATA_String = "REVERSAL_DATA"; // (String) - the string of reversal plain</li>
+            public static final String KEY_REVERSAL_DATA_String = "REVERSAL_DATA"; // (String) - the string of reversal data</li>
 
             public static final String KEY_ERROR_String = "ERROR"; // * <li>(String) - the error description ( from the result of PBOC) </li>
         }
@@ -80,7 +80,6 @@ public class ConstPBOCHandler {
     public class onRequestOnlineProcess {
         public class aaResult {
             public static final String KEY_RESULT_int = "RESULT";
-            public static final String KEY_SIGNATURE_boolean = "SIGNATURE";
             public static final int VALUE_RESULT_QPBOC_ARQC = 201;   //) - QPBOC_ARQC, online request, part of PBOC standard<br>
             public static final int VALUE_RESULT_AARESULT_ARQC = 2;  //, the action analysis result<br>
             public static final int VALUE_RESULT_PAYPASS_MAG_ARQC = 302; // -the mode of magnetic card on paypass request<br>

@@ -18,7 +18,7 @@ public class ConstIPBOC {
             public static final String KEY_isOnline_boolean ="isOnline"; // (boolean)is online</li>
             public static final String KEY_respCode_String ="respCode"; // (String) the response code</li>
             public static final String KEY_authCode_String ="authCode"; // (String) the authorize code</li>
-            public static final String KEY_field55_String ="field55";   // (String) the response of field 55 plain</li>
+            public static final String KEY_field55_String ="field55";   // (String) the response of field 55 data</li>
         }
     }
     public class importCardConfirmResult {
@@ -45,8 +45,6 @@ public class ConstIPBOC {
             public static final int VALUE_cardType_contactless = 1;
 
             public static final String KEY_transProcessCode_byte = "transProcessCode";
-            public static final String KEY_transCurrCode_String = "transCurrCode";
-            public static final String KEY_otherAmount_String = "otherAmount";
 
             public static final String KEY_authAmount_long = "authAmount";
 

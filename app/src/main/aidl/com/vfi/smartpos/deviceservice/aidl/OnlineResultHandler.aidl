@@ -42,11 +42,11 @@ interface OnlineResultHandler {
 	 * <li>ONLINE_RESULT_ERROR(107) - 联机失败，EMV内核错误 | online failure, error in EMV</li>
 	 * <li>ONLINE_RESULT_OTHER_ERROR(110) - 其他错误 | other error</li>
 	 * </ul>
-	 * @param plain - 结果数据 | the result date
+	 * @param data - 结果数据 | the result date
 	 * <ul>
-     * <li>TC_DATA(String) - 交易结果TLV数据 | the TC plain in TLV format</li>
-     * <li>SCRIPT_DATA(String) - 脚本结果TLV数据 | the script plain in TLV format</li>
-     * <li>REVERSAL_DATA(String) - 冲正TLV数据  | the reversal plain in TLV format</li>
+     * <li>TC_DATA(String) - 交易结果TLV数据 | the TC data in TLV format</li>
+     * <li>SCRIPT_DATA(String) - 脚本结果TLV数据 | the script data in TLV format</li>
+     * <li>REVERSAL_DATA(String) - 冲正TLV数据  | the reversal data in TLV format</li>
      * </ul>
 	 */
 	void onProccessResult(int result, in Bundle data);
