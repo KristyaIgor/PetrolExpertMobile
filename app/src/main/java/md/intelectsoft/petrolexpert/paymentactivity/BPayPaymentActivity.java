@@ -38,7 +38,7 @@ public class BPayPaymentActivity extends AppCompatActivity {
         ButterKnife.bind(this);
         ButterKnife.setDebug(true);
 
-        qrCode.setImageBitmap(createQRGradientImage("11f47ad5-7b73-42c0-abae-878b1e16adee", 200, 300));
+        qrCode.setImageBitmap(createQRGradientImage("https://eservicii.md/clientportal/auth/fiscal?bill=37f64fb9-0f8c-4664-8ca1-5aaccb1c7616&device=d8ada9a7-2206-40ac-8fd6-cd159ff1eb5d", 200, 300));
     }
 
 

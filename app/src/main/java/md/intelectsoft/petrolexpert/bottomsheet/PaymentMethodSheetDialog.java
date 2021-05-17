@@ -27,6 +27,7 @@ import md.intelectsoft.petrolexpert.Utils.PayTypeEnum;
 import md.intelectsoft.petrolexpert.adapters.PaymentWithoutAdapter;
 import md.intelectsoft.petrolexpert.network.pe.result.AssortmentSerializable;
 import md.intelectsoft.petrolexpert.network.pe.result.stationSettings.PaymentTypeStation;
+import md.intelectsoft.petrolexpert.paymentactivity.BPayPaymentActivity;
 import md.intelectsoft.petrolexpert.paymentactivity.DKVPaymentActivity;
 
 
@@ -85,7 +86,6 @@ public class PaymentMethodSheetDialog extends BottomSheetDialogFragment implemen
 
         GridView grid = root.findViewById(R.id.listPaymentMethod);
         ConstraintLayout close = root.findViewById(R.id.layoutCloseDialogPayWithout);
-
 
         List<PaymentTypeStation> list = BaseApp.getApplication().getListPayment();
 

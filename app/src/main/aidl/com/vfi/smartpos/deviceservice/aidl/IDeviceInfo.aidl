@@ -2,539 +2,391 @@ package com.vfi.smartpos.deviceservice.aidl;
 import com.vfi.smartpos.deviceservice.aidl.TusnData;
 
 /**
- * \cn_
- * @brief
- *
- * \_en_
- * @brief get some information of the device
- *
- * \en_e
- * \code{.java}
- * \endcode
-  */
+ * <p> get device information, including software and hardware information.
+ */
 interface IDeviceInfo {
 
     /**
-     * \cn_
-     * @brief 获取终端设备序列号
-     *
-     * \_en_
-     * @brief get the serial number(SN) of the terminal.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-    */
+     * <p> get the serial number(SN) of the terminal.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getSerialNo();
 
     /**
-     * \cn_
-     * @brief 获取终端IMSI号
-     *
-     * \_en_
-     * @brief get the IMSI of the terminal.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the IMSI of the terminal.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getIMSI();
 
     /**
-     * \cn_
-     * @brief 获取终端IMEI号
-     *
-     * \_en_
-     * @brief get the IMEI of the terminal.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the IMEI of the terminal.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getIMEI();
 
     /**
-     * \cn_
-     * @brief 获取终端SIM卡ICCID号
-     *
-     * \_en_
-     * @brief get the ICCID of the SIM card which present.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the ICCID of the SIM card which present.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getICCID();
 
     /**
-     * \cn_
-     * @brief 获取厂商名称
-     *
-     * \_en_
-     * @brief get name of manufacture
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get name of manufacture
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getManufacture();
 
     /**
-     * \cn_
-     * @brief 获取终端型号
-     *
-     * \_en_
-     * @brief get model of the terminal
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get model of the terminal
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getModel();
 
     /**
-     * \cn_
-     * @brief 获取Android操作系统版本
-     *
-     * \_en_
-     * @brief get the version of the Android OS.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the version of the Android OS.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getAndroidOSVersion();
 
     /**
-     * \cn_
-     * @brief 获取Android内核版本
-     *
-     * \_en_
-     * @brief get the version of Android Kernel
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the version of Android Kernel
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getAndroidKernelVersion();
 
     /**
-     * \cn_
-     * @brief 获取终端ROM版本
-     *
-     * \_en_
-     * @brief get the ROM version of Android.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the ROM version of Android.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getROMVersion();
 
     /**
-     * \cn_
-     * @brief 获取终端固件版本
-     *
-     * \_en_
-     * @brief get the firmare version of the terminal.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the firmare version of the terminal.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getFirmwareVersion();
 
     /**
-     * \cn_
-     * @brief 获取终端硬件版本
-     *
-     * \_en_
-     * @brief get the hardware version
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p> get the hardware version
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getHardwareVersion();
 
     /**
-     * \cn_
-     * @brief 更新终端系统时间
+     * <p> update the system time with setting
      *
-     * \_en_
-     * @brief update the system time with setting
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
-    boolean updateSystemTime(String date, String time);
+     * @param yyyyMMdd passing data param, data format is yyyyMMdd.
+     * @param HHmmss passing time param, time format is HHmmss.
+     * @return true:update system time success; false:update system time fail;
+     * @since 1.x.x
+     */
+    boolean updateSystemTime(String yyyyMMdd, String HHmmss);
 
     /**
-     * \cn_
-     * @brief 系统功能设置
+     * <p> set system function by bundle param.
      *
+     * <p><pre>{@code
+     *      Bundle bundle = new Bundle();
+     *      bundle.putBoolean("HOMEKEY", true);
+     *      bundle.putBoolean("STATUSBARKEY", true);
+     * }
+     * </pre>
      * @param bundle
-    * <li>HOMEKEY(boolean)</li>    //是否可用home键 | HomeKey enable or not
-    * <li>STATUSBARKEY(boolean)</li>  //是否可用下拉栏 | status bar enable or not
-     * \_en_
-     * @brief set system feature
-     *
-     * @param bundle
-     * <li>HOMEKEY(boolean)</li>    HomeKey enable or disable
-     * <li>STATUSBARKEY(boolean)</li>  status bar(the drop down menu) enable or disable
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <ul>
+     *     <li>key: HOMEKEY {@code String}; value: true/false @{@code boolean}; true;enable Home-Key, false:disable Home-Key</li>
+     *     <li>key: STATUSBARKEY {@code String}; value: true/false @{@code boolean}; true;enable Status-Bar, false:disable Status-Bar</li>
+     * </ul>
+     * @return true:set system function success; false:set system function fail;
+     * @since 1.x.x
+     */
     boolean setSystemFunction(in Bundle bundle);
 
     /**
-     * \cn_
-     * @brief 获取银联终端唯一终端号 TUSN
+     * <p> get the terminal UnionPay serial number.
      *
-     * @param mode 模式, 预留参数， 需为0
-     * @param input 指 对TUSN计算 MAC 时，参与计算的随机数(随机因子)，允许范围:4~10字节
-     * @return 成功返回TUSN数据，失败返回null。
-     * \_en_
-     * @brief TUSN
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-     *
-    **/
+     * @param mode, passing 0
+     * @param input, passing random number for calculating the Mac value of terminal UnionPay serial number. byte array length is between 4 and 10 byte.
+     * @return null if fail.
+     * @deprecated
+     * @since 1.x.x
+     */
     TusnData getTUSN(int mode, in byte[] input);
 
     /**
-     * \cn_
-     * @brief 获取终端设备序列号
+     * <p> get the PN of the terminal.
      *
-     * \_en_
-     * @brief get the PN of the terminal.
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getPN();
 
     /**
-     * \cn_
-     * @brief 是否屏蔽powerKey
+     * <p> set power key disable or enable
      *
-     * \_en_
-     * @brief set power key disable or enable
-     *
-     * @param status true - disable the power, false - enable the power key
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @param status true - disable the power key; true - enable the power key.
+     * @return {@code String}
+     * @since 1.x.x
+     */
     void setPowerStatus(boolean status);
 
     /**
-     * \cn_
-     * @brief 内存总量(单位B)
+     * <p> get the Total RAM. Unit is byte
      *
-     * \_en_
-     * @brief Ram Total(byte)
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getRamTotal();
 
     /**
-     * \cn_
-     * @brief 内存可用容量(单位B)
+     * <p> get the available RAM capacity. Unit is byte.
      *
-     * \_en_
-     * @brief Ram available capacity(byte)
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getRamAvailable();
 
     /**
-     * \cn_
-     * @brief FLASH总量(单位B)
+     * <p> get the flash RAM capacity. Unit is byte.
      *
-     * \_en_
-     * @brief FLASH Rom total(byte)
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getRomTotal();
 
     /**
-     * \cn_
-     * @brief FLASH可用容量(单位B)
+     * <p> get the available flash RAM capacity. Unit is byte.
      *
-     * \_en_
-     * @brief Rom available capacity(byte)
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getRomAvailable();
 
     /**
-     * \cn_
-     * @brief 移动数据使用流量(单位B)
+     * <p> get the mobile data usage total amount. Unit is byte.
      *
-     * \_en_
-     * @brief the mobile plain usage total amount(byte)
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getMobileDataUsageTotal();
 
     /**
-     * \cn_
-     * @brief 开关机次数
+     * <p> get the boot count.
      *
-     * \_en_
-     * @brief boot count
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getBootCounts();
 
     /**
-     * \cn_
-     * @brief 走纸总长度(单位毫米)
+     * <p> get the print paper length. Unit is millimeter.
      *
-     * \_en_
-     * @brief print paper legth
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getPrintPaperLen();
 
     /**
-     * \cn_
-     * @brief 刷卡次数
+     * <p> get the times of magnetic card used.
      *
-     * \_en_
-     * @brief Times of magnetic card used;
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getMagCardUsedTimes();
 
     /**
-     * \cn_
-     * @brief 插卡次数
+     * <p> get the times of smart card used.
      *
-     * \_en_
-     * @brief Times of smart card used;
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getSmartCardUsedTimes();
 
     /**
-     * \cn_
-     * @brief 非接读卡次数
+     * <p> get the times of CTLS card used.
      *
-     * \_en_
-     * @brief Times of CTLS card used;
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getCTLSCardUsedTimes();
 
     /**
-     * \cn_
-     * @brief 电池温度
+     * <p> get the Battery Temperaturd.
      *
-     * \_en_
-     * @brief Battery Temperature;
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getBatteryTemperature();
 
     /**
-     * \cn_
-     * @brief 电池电量
+     * <p> get the Battery level.
      *
-     * \_en_
-     * @brief Battery level
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getBatteryLevel();
 
     /**
-     * \cn_
-     * @brief k21版本
+     * <p> get the k21 version.
      *
-     * \_en_
-     * @brief k21 version
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getK21Version();
 
     /**
-     * \cn_
-     * @brief Meid信息
+     * <p> get the MEID info.
      *
-     * \_en_
-     * @brief Meid info
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getMEID();
 
     /**
-     * \cn_
-     * @brief 获取tamperCode的值
+     * <p> get the tampler code.
      *
-     * \_en_
-     * @brief Get tampler code
-     *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getTamperCode();
 
-
     /**
-     * \en_
-     * @brief Get X990 Service Version
+     * <p> get the X990 Service Version.
      *
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * @return {@code String}
+     * @since 1.x.x
+     */
     String getServiceVersion();
 
     /**
-     * \en_
-     * @brief Get Kernel version
+     * <p> Get Kernel version.
      *
-     * @return Bundle object, key like below:
-     * <ul>
-     * <li> SmartEMV(String)</li>
-     * <li> Visa(String)</li>
-     * <li> MasterCard(String)</li>
-     * <li> JCB(String)</li>
-     * <li> AMEX(String)</li>
-     * <li> Discover(String)</li>
-     * <li> QuickPass(String)</li>
-     * <li> GemaltoPure(String)</li>
+     * @return {@code android.os.Bundle}
+     * <p> The return Bundle object key: <ul>
+     *    <li> @{Code String} SmartEMV</li>
+     *    <li> @{Code String} Visa</li>
+     *    <li> @{Code String} MasterCard</li>
+     *    <li> @{Code String} JCB</li>
+     *    <li> @{Code String} AMEX</li>
+     *    <li> @{Code String} Discover</li>
+     *    <li> @{Code String} QuickPass</li>
+     *    <li> @{Code String} GemaltoPure</li>
      * </ul>
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
-    */
+     * <p><pre>{@code
+     *     String smartEMV = bundle.getString("SmartEMV");
+     *     String visa = bundle.getString("Visa");
+     *     String masterCard = bundle.getString("MasterCard");
+     *     String jcb = bundle.getString("JCB");
+     *     String amex = bundle.getString("AMEX");
+     *     String discover = bundle.getString("Discover");
+     *     String quickPass = bundle.getString("QuickPass");
+     *     String gemaltoPure = bundle.getString("GemaltoPure");
+     * }
+     * </pre>
+     * @since 1.x.x
+     */
     Bundle getKernelVersion();
 
     /**
-     * \en_
-     * @brief Get certificate
-     * @param mode mode 0 for sponsor digest, others, not support, return ""
-     * @return value of certificate
-     * \en_e
-     * \code{.java}
-     * \endcode
-     * @version
-     * @see
+     * <p> Get certificate.
+     * @param mode 0 : sponsor digest; others : not support.
+     * @return {@code String} if param is 0, return sponsor digest certificate. Otherwise, retuen "";
+     * @since 1.x.x
      */
-    String getCertificate( int mode );
+    String getCertificate(int mode);
 
+    /**
+     * <p> Get Battery charging times.
+     * @return {@code String}
+     * @since 1.x.x
+     */
+    String getBatteryChargingTimes();
+
+     /**
+     * <p> get device status
+     * @param {@link android.os.Bundle}
+     * <p><pre>{@code
+     *      Bundle bundle = new Bundle();
+     *      bundle.putString("DeviceType", "PRINTER");
+     * }
+     * </pre>
+     * <p>the values of DeviceType:
+     * <ul>
+     *   <li>@{code String}"PRINTER"</li>
+     *   <li>@{code String}"ICCARDREADER_SLOT1"</li>
+     *   <li>@{code String}"ICCARDREADER_SLOT2"</li>
+     *   <li>@{code String}"RFCARDREADER"</li>
+     *   <li>@{code String}"SAMCARDREADER_SLOT1"</li>
+     *   <li>@{code String}"SAMCARDREADER_SLOT2"</li>
+     *   <li>@{code String}"PINPAD"</li>
+     *   <li>@{code String}"CAMERA_FRONT"</li>
+     *   <li>@{code String}"CAMERA_REAR"</li>
+     *   <li>@{code String}"SDCARD"</li>
+     * </ul>
+     * @return 0:normal; -1:abnormal.
+     * @since 1.x.x
+     */
+     int getDeviceStatus(in Bundle bundle);
+
+    /**
+     * <p> get button battery voltage
+     * @return value of voltage
+     * @since 1.x.x
+     */
+     String getButtonBatteryVol();
+
+    /**
+     * <p> get infomation of device
+     * @return {@link android.os.Bundle}
+     * <p><pre>{@code
+     *      String serialNumber = bundle.getString("SN");
+     *      String pn = bundle.getString("PN");
+     *      String imsi = bundle.getString("IMSI");
+     *      String imei = bundle.getString("IMEI");
+     *      String meid = bundle.getString("MEID");
+     *      String manufacture = bundle.getString("manufacture");
+     *      String deviceModel = bundle.getString("deviceModel");
+     *      String androidOsVersion = bundle.getString("androidOsVer");
+     *      String androidKernalVersion = bundle.getString("androidKernalVer");
+     *      String romVersion = bundle.getString("romVer");
+     *      String firmwareVer = bundle.getString("firmwareVer");
+     *      String hardwareVer = bundle.getString("hardwareVer");
+     *      String k21Version = bundle.getString("k21Ver");
+     *      String vfSerivceVersion = bundle.getString("VFSerivceVer");
+     *      String vrkSN = bundle.getString("VRKSn");
+     *      String sponsorID = bundle.getString("SponsorID");
+     * }
+     * </pre>
+     * <p> the key of bundle :
+     * <ul>
+     *   <li>{code String}SN (descrption:Serial No)<li>
+     *   <li>{code String}PN (descrption:Product No)<li>
+     *   <li>{code String}IMSI<li>
+     *   <li>{code String}IMEI (descrption:International Mobile Equipment Identity)<li>
+     *   <li>{code String}MEID (descrption:Mobile Equipment Identifier)<li>
+     *   <li>{code String}manufacture (descrption:get manufature message)<li>
+     *   <li>{code String}deviceModel (descrption:get device model)<li>
+     *   <li>{code String}androidOsVer (descrption:get android OS version)<li>
+     *   <li>{code String}androidKernalVer (descrption:get android kernel version)<li>
+     *   <li>{code String}romVer (descrption:get rom version)<li>
+     *   <li>{code String}firmwareVer (descrption:get firmware version)<li>
+     *   <li>{code String}hardwareVer (descrption:get hardware version)<li>
+     *   <li>{code String}k21Ver (descrption:get k21 version)<li>
+     *   <li>{code String}VFSerivceVer (descrption:get VFService version)<li>
+     *   <li>{code String}VRKSn (descrption:get VRK sn)<li>
+     *   <li>{code String}SponsorID (descrption:get sponsor id)<li>
+     * </ul>
+     * @since 1.x.x
+     */
+    Bundle getDeviceInfo();
 }

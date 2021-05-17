@@ -81,7 +81,7 @@ public class ConstIPinpad {
             public static final String KEY_pinLimit_ByteArray ="pinLimit";
 
             public static final String KEY_timeout_int ="timeout";
-            public static final String KEY_displayKeyValue_ByteArray = "displayKeyValue";
+
             /**
              * @brief the desType
              *
@@ -107,7 +107,6 @@ public class ConstIPinpad {
             public static final int Value_desType_DUKPT_3DES = 4; // 0x04 DUKPT + 3DES
 
             public static final String KEY_promptString_String ="promptString";
-
 
         }
         public class globleParam {
@@ -137,4 +136,18 @@ public class ConstIPinpad {
         }
     }
 
+    public class calculateByMSKey {
+        public class keyType {
+            public static final int Master_Key = 0x01;
+            public static final int SM4_Master_Key = 0x02;
+            public static final int AES_Master_Key = 0x03;
+        }
+
+        public class algorithmMode {
+            public static final int Encrypt_ECB = 0x00;
+            public static final int Decrypt_ECB = 0x01;
+            public static final int Encrypt_CBC = 0x02;
+            public static final int Decrypt_CBC = 0x03;
+        }
+    }
 }

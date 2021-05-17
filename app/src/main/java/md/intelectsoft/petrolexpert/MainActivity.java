@@ -87,6 +87,7 @@ import md.intelectsoft.petrolexpert.Utils.LocaleHelper;
 import md.intelectsoft.petrolexpert.Utils.PayTypeEnum;
 import md.intelectsoft.petrolexpert.Utils.SPFHelp;
 import md.intelectsoft.petrolexpert.enums.ShiftStateEnum;
+import md.intelectsoft.petrolexpert.fileVerifone.beeper.Beeper;
 import md.intelectsoft.petrolexpert.network.broker.Body.InformationData;
 import md.intelectsoft.petrolexpert.network.broker.Body.SendGetURI;
 import md.intelectsoft.petrolexpert.network.broker.BrokerRetrofitClient;
@@ -144,6 +145,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.buttonScanWithoutIdentify) void onScanWithoutIdentify(){
+//        Beeper.getInstance().startBeep(this, 2, 1, 100,10);
+
         if(4 + 4 != 5){
             Call<GetStationSettings> getAssortmentCall = peServiceAPI.getStationSettings(deviceId);
             progressDialog.setMessage(getString(R.string.load_products_dialot_msg));

@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import com.vfi.smartpos.deviceservice.aidl.IDeviceService;
 import com.vfi.smartpos.deviceservice.aidl.IRFCardReader;
+import com.vfi.smartpos.deviceservice.aidl.card_reader.IUltraLightCard;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -40,7 +41,6 @@ public class BaseApp extends Application {
     private static boolean isVFServiceConnected = false;
     private static boolean deviceIsFiscal = false;
     private static IDeviceService deviceService;  //info about device
-    private static IRFCardReader irfCardReader;  //info about device
     List<PaymentTypeStation> listPayment;
     List<AssortmentSerializable> listProducts;
     private String word;
@@ -52,11 +52,6 @@ public class BaseApp extends Application {
         public void onServiceConnected(ComponentName name, IBinder service) {
             Log.d(TAG, "onServiceConnected, DeviceHelper, TransBasic,AppParams init");
             deviceService = IDeviceService.Stub.asInterface(service);
-            try {
-                irfCardReader = IDeviceService.Stub.asInterface(service).getRFCardReader();
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
 //            DeviceHelper.getInstance().initDeviceHelper(BaseApp.this);
 //            TransBasic.getInstance().initTransBasic(handler , BaseApp.this);
 //            AppParams.getInstance().initAppParam();
@@ -69,13 +64,6 @@ public class BaseApp extends Application {
         }
     };
 
-    public static IRFCardReader getIrfCardReader() {
-        return irfCardReader;
-    }
-
-    public static void setIrfCardReader(IRFCardReader irfCardReader) {
-        BaseApp.irfCardReader = irfCardReader;
-    }
 
     @Override
     public void onCreate() {

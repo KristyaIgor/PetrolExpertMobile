@@ -589,6 +589,7 @@ public class EmvParser {
 		// Extract Card Holder name (if exist)
 		byte[] cardHolderByte = TlvUtil.getValue(pData, EmvTags.CARDHOLDER_NAME);
 		if (cardHolderByte != null) {
+			Log.e("PetrolExpert_BaseApp", "getGetProcessingOptions: get card holder pan:" + new String(cardHolderByte).trim());
 			String[] name = StringUtils.split(new String(cardHolderByte).trim(), CARD_HOLDER_NAME_SEPARATOR);
 			if (name != null && name.length == 2) {
 				card.setHolderFirstname(StringUtils.trimToNull(name[0]));
